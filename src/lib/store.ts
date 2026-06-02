@@ -1,23 +1,27 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { CategoryKey, PropId } from "@/data/challenges";
+import type { CategoryKey, PropId, IntensityRank } from "@/data/challenges";
+import { levelForScore } from "@/data/challenges";
 
 export type GameMode = "standard" | "combined";
 
 interface SessionState {
+  hasHydrated: boolean;
   safeWord: string;
   categories: Record<CategoryKey, boolean>;
   props: Record<PropId, boolean>;
   mode: GameMode;
   rounds: number;
-  ageConsent: boolean;
+  score: number;
+  level: IntensityRank;
   setSafeWord: (w: string) => void;
   toggleCategory: (k: CategoryKey) => void;
   toggleProp: (k: PropId) => void;
   setMode: (m: GameMode) => void;
+  awardPoints: (pts: number) => { leveledUp: boolean; newLevel: IntensityRank };
   incrementRound: () => void;
   resetGame: () => void;
-  setAgeConsent: (v: boolean) => void;
+  setHasHydrated: (v: boolean) => void;
 }
 
 const defaultCategories: Record<CategoryKey, boolean> = {
@@ -44,21 +48,30 @@ const defaultProps: Record<PropId, boolean> = {
 
 export const useSessionStore = create<SessionState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      hasHydrated: false,
       safeWord: "",
       categories: defaultCategories,
       props: defaultProps,
       mode: "standard",
       rounds: 0,
-      ageConsent: false,
+      score: 0,
+      level: 1,
       setSafeWord: (w) => set({ safeWord: w }),
       toggleCategory: (k) =>
         set((s) => ({ categories: { ...s.categories, [k]: !s.categories[k] } })),
       toggleProp: (k) => set((s) => ({ props: { ...s.props, [k]: !s.props[k] } })),
       setMode: (m) => set({ mode: m }),
+      awardPoints: (pts) => {
+        const prevLevel = get().level;
+        const newScore = get().score + pts;
+        const newLevel = levelForScore(newScore);
+        set({ score: newScore, level: newLevel });
+        return { leveledUp: newLevel > prevLevel, newLevel };
+      },
       incrementRound: () => set((s) => ({ rounds: s.rounds + 1 })),
-      resetGame: () => set({ rounds: 0 }),
-      setAgeConsent: (v) => set({ ageConsent: v }),
+      resetGame: () => set({ rounds: 0, score: 0, level: 1 }),
+      setHasHydrated: (v) => set({ hasHydrated: v }),
     }),
     {
       name: "darkroom-session",
@@ -70,8 +83,10 @@ export const useSessionStore = create<SessionState>()(
         categories: s.categories,
         props: s.props,
         mode: s.mode,
-        ageConsent: s.ageConsent,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );
