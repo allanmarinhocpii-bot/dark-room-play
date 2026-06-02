@@ -88,7 +88,7 @@ function PlayPage() {
   };
 
   const currentLevelMeta = LEVELS[level - 1];
-  const nextLevelMeta = level < LEVELS.length ? LEVELS[level] : null;
+  const nextLevelMeta = (LEVELS as readonly (typeof LEVELS)[number][])[level] ?? null;
   const progress = nextLevelMeta
     ? Math.min(
         100,
