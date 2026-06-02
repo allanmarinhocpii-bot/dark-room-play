@@ -149,7 +149,7 @@ export const CHALLENGES: { categorias: Record<CategoryKey, Categoria> } = {
       ],
     },
     fetiches_corporais: {
-      nome: "K - Fetiches & Adoração Corporal",
+      nome: "K - Fetiches & Entrega",
       acoes: [
         "Sub deve usar a língua para explorar e adorar a região anal do Dom (asslicking)",
         "Sub deve lamber e beijar o corpo do Dom de baixo para cima, focando nas zonas íntimas",
