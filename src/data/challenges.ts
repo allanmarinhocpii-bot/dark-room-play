@@ -13,18 +13,32 @@ export interface Categoria {
   locais?: string[];
 }
 
+export type IntensityRank = 1 | 2 | 3;
+
 export const CATEGORY_META: Record<
   CategoryKey,
-  { short: string; colorVar: string; intensity: "Baixa" | "Média" | "Alta" }
+  { short: string; colorVar: string; intensity: "Baixa" | "Média" | "Alta"; rank: IntensityRank }
 > = {
-  bondage: { short: "B", colorVar: "var(--cat-bondage)", intensity: "Média" },
-  disciplina_controle: { short: "D", colorVar: "var(--cat-disciplina)", intensity: "Média" },
-  sensory_deprivation: { short: "Sensory", colorVar: "var(--cat-sensory)", intensity: "Baixa" },
-  impact_sensacoes: { short: "S/M", colorVar: "var(--cat-impact)", intensity: "Alta" },
-  fetiches_corporais: { short: "K", colorVar: "var(--cat-fetiches)", intensity: "Alta" },
-  posicoes: { short: "Pos.", colorVar: "var(--cat-posicoes)", intensity: "Baixa" },
-  jornada_longa: { short: "Endurance", colorVar: "var(--cat-endurance)", intensity: "Alta" },
+  posicoes: { short: "Pos.", colorVar: "var(--cat-posicoes)", intensity: "Baixa", rank: 1 },
+  sensory_deprivation: { short: "Sensory", colorVar: "var(--cat-sensory)", intensity: "Baixa", rank: 1 },
+  bondage: { short: "B", colorVar: "var(--cat-bondage)", intensity: "Média", rank: 2 },
+  disciplina_controle: { short: "D", colorVar: "var(--cat-disciplina)", intensity: "Média", rank: 2 },
+  impact_sensacoes: { short: "S/M", colorVar: "var(--cat-impact)", intensity: "Alta", rank: 3 },
+  fetiches_corporais: { short: "K", colorVar: "var(--cat-fetiches)", intensity: "Alta", rank: 3 },
+  jornada_longa: { short: "Endurance", colorVar: "var(--cat-endurance)", intensity: "Alta", rank: 3 },
 };
+
+export const LEVELS = [
+  { rank: 1 as IntensityRank, name: "Sedução", threshold: 0, accent: "var(--cat-sensory)" },
+  { rank: 2 as IntensityRank, name: "Tensão", threshold: 30, accent: "var(--cat-fetiches)" },
+  { rank: 3 as IntensityRank, name: "Ápice", threshold: 80, accent: "var(--cat-impact)" },
+] as const;
+
+export function levelForScore(score: number): IntensityRank {
+  if (score >= 80) return 3;
+  if (score >= 30) return 2;
+  return 1;
+}
 
 export const CHALLENGES: { categorias: Record<CategoryKey, Categoria> } = {
   categorias: {
