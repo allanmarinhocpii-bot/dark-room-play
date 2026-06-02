@@ -68,21 +68,27 @@ export function drawChallenge(
   activeCategories: CategoryKey[],
   mode: "standard" | "combined",
   selectedProps: PropId[],
+  level: IntensityRank = 3,
 ): Challenge | null {
   if (activeCategories.length === 0) return null;
+  // Filter categories whose intensity is unlocked at the current level
+  const allowed = activeCategories.filter((c) => CATEGORY_META[c].rank <= level);
+  // Fallback: if nothing is allowed yet (e.g. user only picked Alta cats on level 1),
+  // gradually open up to keep the game playable.
+  const pool = allowed.length > 0 ? allowed : activeCategories;
   const props = new Set(selectedProps);
 
-  if (mode === "combined" && activeCategories.length >= 2) {
-    const a = pick(activeCategories);
-    let b = pick(activeCategories);
+  if (mode === "combined" && pool.length >= 2) {
+    const a = pick(pool);
+    let b = pick(pool);
     let safety = 0;
     while (b === a && safety < 10) {
-      b = pick(activeCategories);
+      b = pick(pool);
       safety++;
     }
     const d1 = drawFromCategory(a, props);
     const d2 = drawFromCategory(b, props);
-    if (!d1 || !d2) return drawChallenge(activeCategories, "standard", selectedProps);
+    if (!d1 || !d2) return drawChallenge(pool, "standard", selectedProps, level);
     const text = `${d1.text}\n\n+\n\n${d2.text}`;
     rememberKey(`${d1.key}|${d2.key}`);
     return {
@@ -92,12 +98,12 @@ export function drawChallenge(
     };
   }
 
-  const cat = pick(activeCategories);
+  const cat = pick(pool);
   const drawn = drawFromCategory(cat, props);
   if (!drawn) {
-    const others = activeCategories.filter((c) => c !== cat);
+    const others = pool.filter((c) => c !== cat);
     if (others.length === 0) return null;
-    return drawChallenge(others, "standard", selectedProps);
+    return drawChallenge(others, "standard", selectedProps, level);
   }
   rememberKey(drawn.key);
   return {
