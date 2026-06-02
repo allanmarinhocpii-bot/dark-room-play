@@ -1,4 +1,11 @@
-import { CHALLENGES, type CategoryKey, type PropId, PROPS } from "@/data/challenges";
+import {
+  CHALLENGES,
+  CATEGORY_META,
+  type CategoryKey,
+  type PropId,
+  PROPS,
+  type IntensityRank,
+} from "@/data/challenges";
 
 export interface Challenge {
   text: string;
