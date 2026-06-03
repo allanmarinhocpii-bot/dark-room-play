@@ -1,3 +1,6 @@
+// Dark Room v2 — Banco de desafios com variáveis dinâmicas
+// Variáveis: {ativo} {passivo} {pronome} {pronome_cap} {dele_dela} {dele_dela_ativo} {local}
+
 export type CategoryKey =
   | "bondage"
   | "disciplina_controle"
@@ -7,225 +10,321 @@ export type CategoryKey =
   | "posicoes"
   | "jornada_longa";
 
+export type IntensityRank = 1 | 2 | 3 | 4 | 5;
+
 export interface Categoria {
   nome: string;
-  acoes: string[];
+  short: string;
+  colorVar: string;
+  rankBase: IntensityRank;
+  acoes: Partial<Record<IntensityRank, string[]>>;
   locais?: string[];
 }
 
-export type IntensityRank = 1 | 2 | 3;
-
-export const CATEGORY_META: Record<
-  CategoryKey,
-  { short: string; colorVar: string; intensity: "Baixa" | "Média" | "Alta"; rank: IntensityRank }
-> = {
-  posicoes: { short: "Pos.", colorVar: "var(--cat-posicoes)", intensity: "Baixa", rank: 1 },
-  sensory_deprivation: { short: "Sensory", colorVar: "var(--cat-sensory)", intensity: "Baixa", rank: 1 },
-  bondage: { short: "B", colorVar: "var(--cat-bondage)", intensity: "Média", rank: 2 },
-  disciplina_controle: { short: "D", colorVar: "var(--cat-disciplina)", intensity: "Média", rank: 2 },
-  impact_sensacoes: { short: "S/M", colorVar: "var(--cat-impact)", intensity: "Alta", rank: 3 },
-  fetiches_corporais: { short: "K", colorVar: "var(--cat-fetiches)", intensity: "Alta", rank: 3 },
-  jornada_longa: { short: "Endurance", colorVar: "var(--cat-endurance)", intensity: "Alta", rank: 3 },
+export const INTENSITY_LABEL: Record<IntensityRank, string> = {
+  1: "Baixa",
+  2: "Média",
+  3: "Alta",
+  4: "Intensa",
+  5: "Máxima",
 };
 
-export const LEVELS = [
-  { rank: 1 as IntensityRank, name: "Sedução", threshold: 0, accent: "var(--cat-sensory)" },
-  { rank: 2 as IntensityRank, name: "Tensão", threshold: 30, accent: "var(--cat-fetiches)" },
-  { rank: 3 as IntensityRank, name: "Ápice", threshold: 80, accent: "var(--cat-impact)" },
-] as const;
+export const LEVELS: Array<{
+  rank: IntensityRank;
+  name: string;
+  threshold: number;
+  accent: string;
+  subtitle: string;
+}> = [
+  { rank: 1, name: "Ignição", threshold: 0, accent: "#00FF9D", subtitle: "A primeira faísca." },
+  { rank: 2, name: "Sedução", threshold: 20, accent: "#A78BFA", subtitle: "O desejo começa a tomar forma." },
+  { rank: 3, name: "Tensão", threshold: 50, accent: "#F59E0B", subtitle: "A respiração muda. O corpo pede mais." },
+  { rank: 4, name: "Entrega", threshold: 100, accent: "#EF4444", subtitle: "Não há volta. Só presença." },
+  { rank: 5, name: "Ápice", threshold: 180, accent: "#FF00FF", subtitle: "Tudo está desbloqueado." },
+];
 
 export function levelForScore(score: number): IntensityRank {
-  if (score >= 80) return 3;
-  if (score >= 30) return 2;
+  if (score >= 180) return 5;
+  if (score >= 100) return 4;
+  if (score >= 50) return 3;
+  if (score >= 20) return 2;
   return 1;
 }
 
-export const CHALLENGES: { categorias: Record<CategoryKey, Categoria> } = {
-  categorias: {
-    bondage: {
-      nome: "B - Amarras & Contenção",
-      acoes: [
-        "Pulsos do Sub presos na cabeceira da cama",
-        "Tornozelos do Sub amarrados juntos e fixados nas laterais",
-        "Pulsos e tornozelos do Sub amarrados juntos por trás",
-        "Braços do Sub imobilizados rente ao tronco com faixa",
-        "Dom prende os pulsos do Sub atrás das costas com tecido",
-        "Sub amarrado de forma firme na cadeira ou poltrona",
-        "Dom usa o peso do próprio corpo para travar o Sub na cama",
-        "Dom prende os pulsos do Sub acima da cabeça com uma mão só",
-        "Dedos do Sub entrelaçados e presos atrás da cabeça",
-        "Mãos do Sub presas firmemente nos próprios tornozelos",
-        "Sub imobilizado de bruços com travesseiro travando o quadril",
-        "Pulsos do Sub presos cruzados na frente do peito",
-        "Sub com os braços estendidos e amarrados separados",
-        "Dom usa gravata ou lenço para prender as mãos do Sub nas coxas",
-        "Sub totalmente imobilizado por um lençol esticado sobre o corpo",
-        "Pulsos do Sub presos um em cada tornozelo (posição encolhida)",
-        "Dom usa as próprias pernas para travar o quadril e pernas do Sub",
-        "Mãos do Sub presas atrás da cintura com cinto ou fivela",
-        "Sub com os polegares amarrados juntos atrás das costas",
-        "Dom imobiliza uma das pernas do Sub erguida, amarrando-a na cabeceira",
+// Banco principal — desafios com variáveis dinâmicas
+export const CATEGORIAS: Record<CategoryKey, Categoria> = {
+  posicoes: {
+    nome: "Ângulos & Encaixes",
+    short: "Pos.",
+    colorVar: "var(--cat-posicoes)",
+    rankBase: 1,
+    acoes: {
+      1: [
+        "{ativo} guia {passivo} para um beijo lento de pé, mãos no rosto.",
+        "{ativo} senta e puxa {passivo} para sentar de costas no seu colo.",
+        "Deitados de lado, {ativo} abraça {passivo} por trás por 2 minutos.",
+        "{ativo} pede para {passivo} se deitar de bruços e massageia as costas {dele_dela}.",
+      ],
+      2: [
+        "{ativo} posiciona {passivo} em missionário e segura os pulsos {dele_dela} acima da cabeça.",
+        "{passivo} senta no colo de {ativo} de frente, mantendo contato visual constante.",
+        "{passivo} fica de quatro e {ativo} dita o ritmo pela cintura.",
+        "{ativo} coloca {passivo} na borda da cama, joelhos no peito.",
+      ],
+      3: [
+        "Vaqueira invertida: {passivo} no controle, {ativo} dita o ritmo pelas mãos.",
+        "{passivo} de bruços, almofada alta sob o quadril, {ativo} comanda por cima.",
+        "{ativo} prende {passivo} contra a parede de pé, uma perna erguida.",
+      ],
+      4: [
+        "Doggy modificado: {ativo} puxa o quadril de {passivo} com força e dita pausas.",
+        "{passivo} de joelhos na cama, tronco ereto, {ativo} domina pela frente sem permitir sair da posição.",
+      ],
+      5: [
+        "{passivo} mantém as mãos atrás do pescoço enquanto {ativo} comanda em doggy — proibido sair da posição até o fim da rodada.",
       ],
     },
-    disciplina_controle: {
-      nome: "D - Disciplina & Dinâmicas de Poder",
-      acoes: [
-        "Sub proibido de emitir qualquer som ou gemido por 3 minutos",
-        "Sub deve pedir permissão em voz alta para qualquer reação",
-        "Dom dita o ritmo por comandos curtos: Pare, Continue, Lento, Rápido",
-        "Sub proibido de tocar no próprio corpo até o fim da rodada",
-        "Sub deve manter os olhos fixos nos olhos do Dom sem desviar",
-        "Sub proibido de olhar para o Dom (olhos fixos no teto)",
-        "Dom estabelece 2 regras estritas que valem para a sessão inteira",
-        "Controle de clímax: Dom dita o momento exato do ápice ou nega o orgasmo",
-        "Sub deve manter uma postura específica e o timer zera se ele se mover",
-        "Dom interrompe o espaço de toque se o Sub acelerar o movimento sozinho",
-        "Sub deve contar em voz alta cada estímulo recebido do Dom",
-        "Dom deixa o Sub em espera prolongada antes de iniciar o toque",
-        "Sub deve manter as mãos onde o Dom mandar, sem sair da posição",
-        "Dom confisca o direito de resposta do Sub: apenas obediência física",
-        "Sub deve respirar no ritmo que o Dom ditar e demonstrar por voz",
-        "Se o Sub quebrar uma regra, Dom reinicia o cronômetro do desafio",
-        "Sub deve manter os dentes cerrados, proibido de morder o próprio lábio",
-        "Dom ordena 3 mudanças rápidas de postura apenas por estalar de dedos",
-        "Sub deve fechar os punhos com força e só abrir sob ordem expressa",
-        "Sub deve congelar o movimento exatamente na metade do encaixe atual",
+  },
+  sensory_deprivation: {
+    nome: "Sensorial",
+    short: "Sens.",
+    colorVar: "var(--cat-sensory)",
+    rankBase: 1,
+    acoes: {
+      1: [
+        "{ativo} fecha os olhos de {passivo} com a mão e beija lentamente o pescoço {dele_dela}.",
+        "{ativo} passa as pontas dos dedos no rosto de {passivo} por 1 minuto sem dizer nada.",
+        "{passivo} fecha os olhos e tenta adivinhar onde {ativo} vai tocar a seguir.",
+      ],
+      2: [
+        "{passivo} vendado. {ativo} se aproxima em silêncio e toca por 2 minutos.",
+        "{ativo} sopra ar frio na pele de {passivo} sem encostar.",
+        "{ativo} alterna texturas (tecido áspero, pele, sopro) no corpo de {passivo}.",
+      ],
+      3: [
+        "{passivo} vendado e proibido de falar. {ativo} comanda toda a próxima rodada.",
+        "{ativo} usa o próprio cabelo para fazer carícias no peito e abdômen de {passivo} às cegas.",
+      ],
+      4: [
+        "{passivo} vendado e com mordaça leve. {ativo} dita a respiração por 3 minutos.",
+        "Quarto em escuridão absoluta. {ativo} guia {passivo} apenas pela voz.",
+      ],
+      5: [
+        "{passivo} vendado, sem som (fones), sem fala. {ativo} é o único canal sensorial pelos próximos 5 minutos.",
       ],
     },
-    sensory_deprivation: {
-      nome: "Sensory - Privação & Estímulos Sensoriais",
-      acoes: [
-        "Sub totalmente vendado durante as próximas ações",
-        "Sub com fones de ouvido isolando completamente o som ambiente",
-        "Quarto colocado em escuridão absoluta por uma rodada",
-        "Sub vendado deve se guiar apenas pelo som da respiração do Dom",
-        "Dom faz aproximações silenciosas para tocar o Sub de surpresa",
-        "Sub vendado e proibido de tatear o espaço ao redor",
-        "Sub deve adivinhar em voz alta com qual parte do corpo foi tocado",
-        "Dom vira o Sub de costas para ocultar a aproximação do toque",
-        "Dom usa uma mordaça leve ou fita para conter os sons do Sub",
-        "Sub vendado deve focar 100% no som da voz de comando do Dom",
-        "Dom passa uma pluma ou pincel macio pelas zonas mais sensíveis",
-        "Dom alterna o uso de texturas: roçar áspero seguido de toque sedoso",
-        "Sub deve descrever às cegas qual sensação está sentindo na pele",
-        "Dom sopra ar frio na pele do Sub à distância, sem tocá-lo",
-        "Sub com os olhos vendados e nariz obstruído levemente para focar no tato",
-        "Dom usa o próprio cabelo para fazer carícias leves no rosto e peito do Sub",
+  },
+  disciplina_controle: {
+    nome: "Disciplina & Controle",
+    short: "Disc.",
+    colorVar: "var(--cat-disciplina)",
+    rankBase: 2,
+    acoes: {
+      2: [
+        "{passivo} proibido de emitir qualquer som por 2 minutos enquanto {ativo} toca.",
+        "{ativo} dita o ritmo por comandos curtos: pare, continue, lento, rápido.",
+        "{passivo} mantém olhos fixos nos olhos de {ativo} — proibido desviar.",
+      ],
+      3: [
+        "{passivo} pede permissão em voz alta para qualquer reação.",
+        "{passivo} mantém uma postura fixa. Se mover, {ativo} reinicia o cronômetro.",
+        "{passivo} conta em voz alta cada estímulo recebido.",
+      ],
+      4: [
+        "{ativo} leva {passivo} à beira do ápice e nega o orgasmo. Repete 3 vezes.",
+        "{passivo} mantém as mãos exatamente onde {ativo} mandar — sem sair da posição por nenhum motivo.",
+        "{ativo} dita a respiração de {passivo} no próprio ritmo por 3 minutos.",
+      ],
+      5: [
+        "Controle total de clímax: {ativo} decide exatamente o segundo do ápice de {passivo} — ou nega completamente.",
+        "{passivo} executa qualquer ordem de {ativo} sem direito a resposta verbal por 5 minutos.",
       ],
     },
-    impact_sensacoes: {
-      nome: "S/M - Impacto & Temperatura",
-      acoes: [
-        "Sequência de 5 palmadas firmes e ritmadas",
-        "Leves mordidas de intensidade calibrada",
-        "Pequenos beliscões e unhadas suaves",
-        "Deslizar cubo de gelo seguido de sopro quente",
-        "Passar colher ou objeto de metal frio",
-        "Dom aplica carícias que evoluem para tapinhas a cada 30 segundos",
-        "Estímulo contínuo e intenso na mesma zona por 2 minutos sem parar",
-        "Palmadas alternadas com massagem forte no local do impacto",
-        "Dom usa as unhas para desenhos firmes",
-        "Pequenos tapinhas para dar sensibilidade",
-        "Dom pinga cera de vela de massagem (baixa temperatura)",
-        "Estímulo em acúmulo: Dom varia toques leves e firmes sem aviso",
-        "Dom usa um acessório leve para 3 batidas firmes",
-        "Dom pressiona com os dedos por 1 minuto",
-        "Dom morde suavemente o lábio inferior do Sub até ele pedir trégua",
-        "Sequência rápida de 10 tapinhas leves",
-        "Dom usa cubos de gelo escondidos na própria boca durante o beijo",
-        "Pressionar as palmas das mãos aquecidas com força",
-        "Dom arranha suavemente com as pontas dos dedos",
-        "Uso de contraste térmico: as duas mãos do Dom (uma fria e uma quente) agem juntas",
+  },
+  bondage: {
+    nome: "Amarras & Contenção",
+    short: "Bond.",
+    colorVar: "var(--cat-bondage)",
+    rankBase: 2,
+    acoes: {
+      2: [
+        "{ativo} prende os pulsos de {passivo} com as próprias mãos acima da cabeça.",
+        "{ativo} amarra os pulsos de {passivo} na frente do peito com um lenço.",
       ],
-      locais: [
-        "nas nádegas",
-        "na parte interna das coxas",
-        "no pescoço e nuca",
-        "no abdômen e costelas",
-        "na linha da coluna (costas)",
-        "nos mamilos",
-        "no quadril e virilha",
-        "atrás dos joelhos e panturrilhas",
+      3: [
+        "{ativo} prende os pulsos de {passivo} na cabeceira da cama.",
+        "{ativo} amarra os tornozelos de {passivo} juntos e dita o ritmo.",
+        "{ativo} usa o peso do próprio corpo para travar {passivo} na cama.",
+      ],
+      4: [
+        "Pulsos e tornozelos de {passivo} amarrados por trás. {ativo} comanda totalmente.",
+        "{passivo} totalmente imobilizado por um lençol esticado sobre o corpo.",
+        "{ativo} prende uma das pernas de {passivo} erguida na cabeceira.",
+      ],
+      5: [
+        "{passivo} amarrado, vendado e em silêncio por 5 minutos. {ativo} faz o que quiser.",
       ],
     },
-    fetiches_corporais: {
-      nome: "K - Fetiches & Entrega",
-      acoes: [
-        "Sub deve usar a língua para explorar e adorar a região anal do Dom (asslicking)",
-        "Sub deve lamber e beijar o corpo do Dom de baixo para cima, focando nas zonas íntimas",
-        "Dom e Sub vão para o chuveiro e o Dom urina nas pernas ou corpo do Sub sob a água (shower play)",
-        "Sub deve lamber o suor ou fluidos sexuais diretamente da pele do Dom",
-        "Sub deve usar a língua para massagear e limpar os pés ou dedos do Dom",
-        "Sub posicionado de bruços enquanto o Dom senta levemente sobre seu rosto",
-        "Sub deve saborear e engolir todos os fluidos gerados pelo Dom",
-        "Sub deve massagear a região íntima do Dom usando apenas a boca e a língua por 3 minutos",
-        "Sub deve urinar apenas quando o Dom ordenar, segurando até o limite",
-        "Dom espalha fluidos no peito ou abdômen do Sub e ordena que ele espalhe com as mãos",
-        "Sub deve manter a boca colada à pele do Dom, respirando o calor dele por 2 minutos",
-        "Dom usa seus pés nus para estimular a região íntima do Sub enquanto ele assiste",
-        "Sub deve beijar as mãos do Dom e pedir por seus fluidos em sinal de entrega",
-        "Dom dita o controle de idas ao banheiro do Sub durante todo o jogo",
-        "Sub deve lamber a virilha do Dom de forma lenta, seguindo o ritmo da respiração",
-        "Sub deve usar os lábios para contornar a linha interna da coxa do Dom sem usar as mãos",
-        "Dom e Sub no banho: Dom comanda o Sub a se lavar por inteiro usando apenas a boca",
-        "Sub deve cheirar e beijar as axilas e o pescoço do Dom, demonstrando adoração",
-        "Dom usa fluidos corporais para lubrificar os mamilos do Sub de forma lenta",
-        "Sub deve lamber a sola do pé do Dom do calcanhar até os dedos, pausadamente",
+  },
+  fetiches_corporais: {
+    nome: "Fetiches & Entrega",
+    short: "Fet.",
+    colorVar: "var(--cat-fetiches)",
+    rankBase: 3,
+    acoes: {
+      3: [
+        "{passivo} lambe o pescoço e clavícula de {ativo} pedindo permissão a cada beijo.",
+        "{passivo} beija e adora as mãos de {ativo} por 2 minutos.",
+        "{ativo} ordena que {passivo} cheire e beije as axilas e o pescoço {dele_dela_ativo}.",
+      ],
+      4: [
+        "{passivo} usa só a boca para massagear a região íntima de {ativo} por 3 minutos.",
+        "{ativo} usa os pés nus para estimular {passivo} enquanto {pronome} assiste, sem tocar.",
+        "{passivo} lambe a virilha de {ativo} em ritmo lento, seguindo a respiração {dele_dela_ativo}.",
+      ],
+      5: [
+        "{passivo} adora a região anal de {ativo} com a língua sob comando total (asslicking).",
+        "No chuveiro: {ativo} controla os fluidos sobre {passivo} (shower play, conforme acordado).",
+        "{passivo} engole e saboreia todos os fluidos que {ativo} produzir.",
       ],
     },
-    posicoes: {
-      nome: "Ângulos & Encaixes",
-      acoes: [
-        "Missionário clássico com as pernas do Sub elevadas nos ombros do Dom",
-        "Missionário com o quadril do Sub altamente elevado por almofadas",
-        "Vaqueira inversa (Sub de costas, quadril dominado pelo ritmo do Dom)",
-        "Doggy style tradicional com o peito e rosto colados no colchão",
-        "Sentados frente a frente, com o Sub no colo do Dom no controle do equilíbrio",
-        "De bruços com travesseiro alto sob o quadril (ângulo de fricção)",
-        "Corpos de lado e cruzados em formato de tesoura (X)",
-        "Sub na borda da cama com os joelhos puxados ao próprio peito",
-        "Sub ajoelhado no chão, com o peito e braços apoiados na cama",
-        "Sub de quatro, apoiado inteiramente nos cotovelos e cabeça baixa",
-        "De pé, com o Sub totalmente apoiado e travado contra a parede",
-        "Sub deitado de costas na cama, segurando os próprios pés com as mãos",
-        "Vaqueira clássica, mas o Dom segura os pulsos do Sub acima da cabeça",
-        "Doggy style modificado onde o Dom puxa o quadril do Sub para trás com força",
-        "Sub deitado de lado na cama com uma das pernas totalmente erguida",
-        "Posição de lótus na cama: os dois sentados e abraçados, contato corporal máximo",
-        "Sub de joelhos na cama com o tronco ereto, enquanto o Dom domina pela frente",
-        "Missionário invertido: Dom apoia todo o peso do peito contra o peito do Sub",
-        "Sub na borda do colchão com os pés apoiados no chão, Dom de pé comandando",
-        "Doggy style com o Sub mantendo as duas mãos presas atrás do próprio pescoço",
+  },
+  impact_sensacoes: {
+    nome: "Impacto & Temperatura",
+    short: "S/M",
+    colorVar: "var(--cat-impact)",
+    rankBase: 3,
+    acoes: {
+      3: [
+        "Sequência de 5 palmadas ritmadas {local}.",
+        "{ativo} desliza um cubo de gelo {local} seguido de sopro quente.",
+        "{ativo} arranha suavemente com as pontas dos dedos {local}.",
+      ],
+      4: [
+        "{ativo} alterna palmadas firmes com massagem forte no local do impacto, {local}.",
+        "Mordidas calibradas {local} por 1 minuto.",
+        "{ativo} usa um acessório leve para 3 batidas firmes {local}.",
+      ],
+      5: [
+        "Contraste térmico: as duas mãos de {ativo} (uma fria, uma quente) agem juntas {local} por 2 minutos.",
+        "Estímulo contínuo e intenso na mesma zona {local} por 2 minutos sem parar.",
       ],
     },
-    jornada_longa: {
-      nome: "Endurance - Resistência & Longa Duração",
-      acoes: [
-        "Sub deve fazer massagem contínua no Dom por 10 minutos sem parar",
-        "Dom leva o Sub à beira do ápice (edging) 3 a 5 vezes seguidas",
-        "Sub fica 5 minutos vendado no canto do quarto aguardando ordens em silêncio",
-        "Sessão estendida de 20 minutos focada exclusivamente no prazer do Dom",
-        "Sub totalmente imobilizado na cama enquanto o Dom se autoestimula à sua frente",
-        "Dom reveza 3 estímulos de impacto e controle seguidos, sem descanso para o Sub",
-        "Sub deve manter-se ajoelhado ereto aos pés da cama em silêncio por 5 minutos",
-        "Jogo de resistência: Dom mantém estímulo repetitivo e o Sub deve aguentar sem se mover",
-        "Sessão de carícias ininterruptas de 15 minutos onde o Sub está proibido de retribuir",
-        "Edging psicológico: Dom dita fantasias por 10 minutos sem permitir nenhum toque físico",
+    locais: [
+      "nas nádegas",
+      "na parte interna das coxas",
+      "no pescoço e nuca",
+      "no abdômen",
+      "ao longo da coluna",
+      "nos mamilos",
+      "no quadril",
+    ],
+  },
+  jornada_longa: {
+    nome: "Endurance",
+    short: "End.",
+    colorVar: "var(--cat-endurance)",
+    rankBase: 4,
+    acoes: {
+      4: [
+        "{passivo} massageia {ativo} por 10 minutos sem parar e sem retribuição.",
+        "{ativo} mantém estímulo repetitivo por 5 minutos — {passivo} deve aguentar sem se mover.",
+        "{passivo} permanece ajoelhado em silêncio aos pés da cama por 5 minutos aguardando ordens.",
+      ],
+      5: [
+        "Edging: {ativo} leva {passivo} à beira do ápice 5 vezes seguidas, sem permitir.",
+        "Sessão de 15 minutos focada exclusivamente no prazer de {ativo}. {passivo} proibido de receber.",
+        "Edging psicológico: {ativo} dita fantasias por 10 minutos sem permitir nenhum toque físico.",
       ],
     },
   },
 };
 
+// Categoria oculta — Tensão Psicológica (não aparece no setup)
+export const TENSAO_PSICOLOGICA = {
+  nome: "Tensão Psicológica",
+  acoes: [
+    "Olhem nos olhos um do outro por 60 segundos sem dizer nada.",
+    "{ativo} sussurra no ouvido de {passivo} o que pretende fazer a seguir — sem tocar.",
+    "{ativo} aproxima os lábios dos lábios de {passivo} sem encostar, por 30 segundos.",
+    "{passivo} descreve em voz alta o que está sentindo agora. {ativo} apenas escuta.",
+    "Mãos paradas. Apenas respiração compartilhada por 1 minuto.",
+    "{ativo} percorre o corpo de {passivo} com o olhar — proibido tocar por 90 segundos.",
+    "{passivo} diz uma frase de entrega à escolha {dele_dela}. {ativo} responde apenas com o olhar.",
+  ],
+};
+
+// Carta de Virada — força inversão de papéis
+export const VIRADA = {
+  texto:
+    "Os papéis se invertem por essa rodada. Agora {ativo} recebe e {passivo} comanda. Próxima carta, tudo volta ao normal.",
+};
+
+// Mapeamento de props → texto adicional injetado quando ativo + compatível
 export const PROPS = [
-  { id: "venda", label: "Venda", keywords: ["vendado", "vendada", "venda"] },
-  { id: "gelo", label: "Gelos", keywords: ["gelo", "cubo de gelo", "cubos de gelo"] },
-  { id: "corda", label: "Cordas / Faixas", keywords: ["amarrad", "faixa", "corda", "lençol"] },
-  { id: "vela", label: "Vela de Massagem", keywords: ["vela", "cera"] },
-  { id: "paddle", label: "Paddle / Palmatória", keywords: ["paddle", "palmatória", "acessório"] },
-  { id: "pluma", label: "Pluma / Pincel", keywords: ["pluma", "pincel"] },
-  { id: "mordaca", label: "Mordaça", keywords: ["mordaça", "fita"] },
-  { id: "gravata", label: "Gravata / Lenço", keywords: ["gravata", "lenço", "tecido"] },
-  { id: "almofada", label: "Almofadas", keywords: ["almofada", "travesseiro"] },
+  {
+    id: "venda",
+    label: "Venda",
+    hint: "Antes de começar, {ativo} venda {passivo}.",
+    keywords: ["vendad", "vend"],
+    fitCats: ["sensory_deprivation", "disciplina_controle", "impact_sensacoes", "fetiches_corporais"] as CategoryKey[],
+  },
+  {
+    id: "gelo",
+    label: "Gelo",
+    hint: "Use gelo no processo.",
+    keywords: ["gelo", "frio", "térmico"],
+    fitCats: ["impact_sensacoes", "sensory_deprivation"] as CategoryKey[],
+  },
+  {
+    id: "corda",
+    label: "Cordas / Faixas",
+    hint: "Amarre os pulsos de {passivo} antes.",
+    keywords: ["amarr", "prend", "corda", "faixa"],
+    fitCats: ["bondage", "disciplina_controle"] as CategoryKey[],
+  },
+  {
+    id: "vela",
+    label: "Vela de Massagem",
+    hint: "Pingue cera no momento que achar certo.",
+    keywords: ["cera", "vela"],
+    fitCats: ["impact_sensacoes"] as CategoryKey[],
+  },
+  {
+    id: "paddle",
+    label: "Paddle / Palmatória",
+    hint: "Use o paddle quando indicado.",
+    keywords: ["palmada", "batida", "acessório", "paddle"],
+    fitCats: ["impact_sensacoes", "disciplina_controle"] as CategoryKey[],
+  },
+  {
+    id: "pluma",
+    label: "Pluma / Pincel",
+    hint: "Use a pluma no percurso.",
+    keywords: ["pluma", "pincel", "carícia"],
+    fitCats: ["sensory_deprivation"] as CategoryKey[],
+  },
+  {
+    id: "mordaca",
+    label: "Mordaça",
+    hint: "Coloque a mordaça antes de começar.",
+    keywords: ["silêncio", "som", "fala", "mordaça"],
+    fitCats: ["disciplina_controle", "sensory_deprivation"] as CategoryKey[],
+  },
+  {
+    id: "gravata",
+    label: "Gravata / Lenço",
+    hint: "Use a gravata/lenço para prender.",
+    keywords: ["lenço", "tecido", "gravata", "pulsos"],
+    fitCats: ["bondage"] as CategoryKey[],
+  },
+  {
+    id: "almofada",
+    label: "Almofadas",
+    hint: "Posicione uma almofada sob o quadril de {passivo}.",
+    keywords: ["almofada", "travesseiro", "quadril"],
+    fitCats: ["posicoes"] as CategoryKey[],
+  },
 ] as const;
 
 export type PropId = (typeof PROPS)[number]["id"];

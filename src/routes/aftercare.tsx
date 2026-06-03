@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { motion } from "framer-motion";
+import { useSessionStore } from "@/lib/store";
 
 export const Route = createFileRoute("/aftercare")({
   head: () => ({
@@ -11,60 +13,65 @@ export const Route = createFileRoute("/aftercare")({
 });
 
 function AftercarePage() {
+  const navigate = useNavigate();
+  const reason = useSessionStore((s) => s.stats.endReason);
+  const isSafe = reason === "safeword";
+
   return (
-    <div className="min-h-screen bg-background px-6 py-16">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+      className="min-h-screen px-6 py-20"
+      style={{ background: "#F5F0EB", color: "#1a1a1a" }}
+    >
       <div className="mx-auto max-w-md text-center">
-        <p className="font-display text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-          Sessão encerrada
-        </p>
-        <h1 className="mt-3 font-display text-4xl uppercase tracking-wider text-foreground">
-          Aftercare
-        </h1>
-        <div className="mx-auto mt-4 h-px w-16 bg-border" />
+        <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: "rgba(0,0,0,0.06)" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </div>
 
-        <p className="mt-8 text-base leading-relaxed text-foreground">
-          Respirem juntos. Sem pressa. O jogo acabou — o cuidado começa agora.
-        </p>
+        {isSafe ? (
+          <>
+            <h1 className="text-3xl font-medium" style={{ color: "#1a1a1a" }}>Pausa.</h1>
+            <p className="mt-4 text-base" style={{ color: "#444" }}>
+              Tudo bem. Vocês estão seguros.
+            </p>
+            <ul className="mt-10 space-y-4 text-left text-base" style={{ color: "#333" }}>
+              <li>→ Água primeiro.</li>
+              <li>→ Cobertor se precisar.</li>
+              <li>→ Fiquem juntos por pelo menos 10 minutos.</li>
+              <li>→ Sem análise agora. Só presença.</li>
+            </ul>
+            <p className="mt-8 text-sm" style={{ color: "#555" }}>
+              Quando estiverem prontos, podem conversar sobre o que aconteceu.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-3xl font-medium" style={{ color: "#1a1a1a" }}>
+              Sessão encerrada.
+            </h1>
+            <p className="mt-4 text-base" style={{ color: "#444" }}>
+              Cuidem um do outro agora.
+            </p>
+            <ul className="mt-10 space-y-4 text-left text-base" style={{ color: "#333" }}>
+              <li>→ Água.</li>
+              <li>→ Contato físico confortável.</li>
+              <li>→ Falem o que foi bom.</li>
+            </ul>
+          </>
+        )}
 
-        <ul className="mt-8 space-y-4 text-left text-sm text-muted-foreground">
-          <CareItem
-            title="Respiração"
-            body="Inspirem fundo pelo nariz por 4 segundos e soltem pela boca por 6. Repitam cinco vezes."
-          />
-          <CareItem
-            title="Toque de conforto"
-            body="Abraço prolongado, mãos sobre o peito, contato pele a pele sem expectativa."
-          />
-          <CareItem
-            title="Hidratação"
-            body="Água, chá morno ou algo doce. O corpo precisa repor energia."
-          />
-          <CareItem
-            title="Palavras"
-            body="Compartilhem o que funcionou, o que surpreendeu e o que vocês querem ajustar da próxima vez."
-          />
-          <CareItem
-            title="Tempo"
-            body="Sem retorno imediato à rotina. Reservem ao menos 15 minutos de presença mútua."
-          />
-        </ul>
-
-        <Link
-          to="/"
-          className="mt-12 inline-block rounded-md border border-border px-6 py-3 font-display text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground"
+        <button
+          onClick={() => navigate({ to: "/historia" })}
+          className="mt-14 w-full rounded-md py-4 font-display text-xs uppercase tracking-[0.3em]"
+          style={{ background: "#1a1a1a", color: "#fff" }}
         >
-          Voltar ao Setup
-        </Link>
+          Estamos bem
+        </button>
       </div>
-    </div>
-  );
-}
-
-function CareItem({ title, body }: { title: string; body: string }) {
-  return (
-    <li className="rounded-md border border-border bg-card p-4">
-      <p className="font-display text-[10px] uppercase tracking-[0.25em] text-foreground">{title}</p>
-      <p className="mt-1.5 text-sm text-muted-foreground">{body}</p>
-    </li>
+    </motion.div>
   );
 }

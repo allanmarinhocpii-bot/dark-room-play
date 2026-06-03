@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlayRouteImport } from './routes/play'
+import { Route as HistoriaRouteImport } from './routes/historia'
 import { Route as AftercareRouteImport } from './routes/aftercare'
 import { Route as IndexRouteImport } from './routes/index'
 
 const PlayRoute = PlayRouteImport.update({
   id: '/play',
   path: '/play',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoriaRoute = HistoriaRouteImport.update({
+  id: '/historia',
+  path: '/historia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AftercareRoute = AftercareRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aftercare': typeof AftercareRoute
+  '/historia': typeof HistoriaRoute
   '/play': typeof PlayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aftercare': typeof AftercareRoute
+  '/historia': typeof HistoriaRoute
   '/play': typeof PlayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/aftercare': typeof AftercareRoute
+  '/historia': typeof HistoriaRoute
   '/play': typeof PlayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/aftercare' | '/play'
+  fullPaths: '/' | '/aftercare' | '/historia' | '/play'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aftercare' | '/play'
-  id: '__root__' | '/' | '/aftercare' | '/play'
+  to: '/' | '/aftercare' | '/historia' | '/play'
+  id: '__root__' | '/' | '/aftercare' | '/historia' | '/play'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AftercareRoute: typeof AftercareRoute
+  HistoriaRoute: typeof HistoriaRoute
   PlayRoute: typeof PlayRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/play'
       fullPath: '/play'
       preLoaderRoute: typeof PlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/historia': {
+      id: '/historia'
+      path: '/historia'
+      fullPath: '/historia'
+      preLoaderRoute: typeof HistoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/aftercare': {
@@ -88,18 +105,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AftercareRoute: AftercareRoute,
+  HistoriaRoute: HistoriaRoute,
   PlayRoute: PlayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

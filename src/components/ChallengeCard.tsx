@@ -1,70 +1,100 @@
 import { motion } from "framer-motion";
-import { CATEGORY_META, CHALLENGES, type CategoryKey } from "@/data/challenges";
-import { CountdownTimer } from "./CountdownTimer";
+import { CATEGORIAS, INTENSITY_LABEL, type CategoryKey, type IntensityRank } from "@/data/challenges";
+import { ArcTimer } from "./ArcTimer";
+
+export type ExitDirection = "up" | "left" | "none";
 
 export function ChallengeCard({
   text,
   categories,
   durationSeconds,
   cardKey,
+  level,
+  ativoNome,
+  passivoNome,
+  propHint,
+  exitDir = "none",
 }: {
   text: string;
   categories: CategoryKey[];
   durationSeconds?: number;
   cardKey: string;
+  level: IntensityRank;
+  ativoNome: string;
+  passivoNome: string;
+  propHint?: string;
+  exitDir?: ExitDirection;
 }) {
   const primary = categories[0];
   const secondary = categories[1];
-  const primaryColor = CATEGORY_META[primary].colorVar;
-  const secondaryColor = secondary ? CATEGORY_META[secondary].colorVar : primaryColor;
+  const primaryColor = primary ? CATEGORIAS[primary].colorVar : "var(--foreground)";
+  const secondaryColor = secondary ? CATEGORIAS[secondary].colorVar : primaryColor;
+
+  const exit =
+    exitDir === "up"
+      ? { y: -120, opacity: 0, scale: 0.95 }
+      : exitDir === "left"
+      ? { x: -160, opacity: 0, rotate: -4 }
+      : { opacity: 0, scale: 0.95 };
 
   return (
     <motion.div
       key={cardKey}
-      initial={{ opacity: 0, y: 24, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -24, scale: 0.97 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="glow-cat relative w-full max-w-md rounded-2xl border border-border bg-card p-8"
+      initial={{ opacity: 0, rotateY: -90 }}
+      animate={{ opacity: 1, rotateY: 0 }}
+      exit={exit}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       style={
         {
           "--cat-color": primaryColor,
           backgroundImage: secondary
-            ? `linear-gradient(135deg, color-mix(in oklab, ${primaryColor} 8%, transparent), color-mix(in oklab, ${secondaryColor} 8%, transparent))`
+            ? `linear-gradient(135deg, color-mix(in oklab, ${primaryColor} 7%, transparent), color-mix(in oklab, ${secondaryColor} 7%, transparent))`
             : undefined,
+          perspective: 1000,
         } as React.CSSProperties
       }
+      className="glow-cat relative w-full max-w-md rounded-2xl border border-border bg-card p-7"
     >
-      <div className="flex flex-wrap items-center gap-2">
+      <p
+        className="font-display text-[10px] uppercase tracking-[0.3em]"
+        style={{ color: primaryColor }}
+      >
+        {ativoNome} comanda · {passivoNome} recebe
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         {categories.map((c) => (
           <span
             key={c}
             className="rounded-full border px-2.5 py-1 font-display text-[10px] uppercase tracking-[0.2em]"
             style={{
-              borderColor: `color-mix(in oklab, ${CATEGORY_META[c].colorVar} 60%, transparent)`,
-              color: CATEGORY_META[c].colorVar,
+              borderColor: `color-mix(in oklab, ${CATEGORIAS[c].colorVar} 60%, transparent)`,
+              color: CATEGORIAS[c].colorVar,
             }}
           >
-            {CATEGORY_META[c].short}
+            {CATEGORIAS[c].short}
           </span>
         ))}
         <span className="ml-auto font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          {CATEGORY_META[primary].intensity}
+          {INTENSITY_LABEL[level]}
         </span>
       </div>
 
-      <p className="mt-2 font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        {CHALLENGES.categorias[primary].nome}
-        {secondary ? ` × ${CHALLENGES.categorias[secondary].nome}` : ""}
-      </p>
-
-      <div className="mt-6 min-h-[180px]">
-        <p className="whitespace-pre-line text-lg leading-relaxed text-foreground">{text}</p>
+      <div className="mt-7 min-h-[180px]">
+        <p className="whitespace-pre-line text-[19px] leading-[1.55] text-foreground">{text}</p>
+        {propHint && (
+          <>
+            <div className="mt-5 h-px w-12 bg-border" />
+            <p className="mt-4 text-[14px] italic leading-relaxed text-muted-foreground/80">
+              {propHint}
+            </p>
+          </>
+        )}
       </div>
 
       {durationSeconds ? (
-        <div className="mt-6 border-t border-border pt-5">
-          <CountdownTimer seconds={durationSeconds} resetKey={cardKey} />
+        <div className="mt-7 flex justify-center border-t border-border pt-6">
+          <ArcTimer seconds={durationSeconds} resetKey={cardKey} color={primaryColor} />
         </div>
       ) : null}
     </motion.div>
