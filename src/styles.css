@@ -122,4 +122,10 @@
   .animate-pulse-safe {
     animation: pulse-safe 2.2s ease-in-out infinite;
   }
+
+  @keyframes twist-pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(249, 115, 22, 0.4); }
+    50%      { box-shadow: 0 0 28px rgba(249, 115, 22, 1); }
+  }
+  .twist-pulse { animation: twist-pulse 1.6s ease-in-out infinite; }
 }
