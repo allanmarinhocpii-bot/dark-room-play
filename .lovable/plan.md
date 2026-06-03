@@ -1,129 +1,88 @@
-# Plano — Dark Room: Jogo de Cartas para Casais
+# Plano — Dark Room v2
 
-SPA premium em TanStack Start com estética minimalista "Dark Room" (preto absoluto + acentos neon), engine dinâmico de combinação de desafios, e fluxo seguro com Safe Word global.
+Implementação em fases das 12 melhorias. Mantém estética dark atual; muda arquitetura, conteúdo e fluxo.
 
-## Stack & arquitetura
+## Fase 1 — Fundação (dados + motor)
 
-- **Frontend only** (sem backend): todo o estado vive em memória + `sessionStorage` (limpa ao fechar — privacidade).
-- **Rotas** (TanStack Router):
-  - `/` — Tela de Boas-vindas + Setup (Safe Word, categorias, props, modo)
-  - `/play` — Arena de Gameplay (carta + ações + botão Safe Word flutuante)
-  - `/aftercare` — Tela de cuidado pós-Safe Word
-- **Estado global**: Zustand store (`useSessionStore`) com safe word, categorias ativas, props, modo, contador de rodadas, carta atual, histórico.
-- **Animações**: framer-motion (fade/scale/swipe entre cartas).
-- **Validação**: zod (safe word obrigatória, ≥1 categoria ativa antes de jogar).
+**1.1 Novo banco de dados** (`src/data/challenges.ts`)
+- Reestruturar: cada categoria com `acoes` indexadas por nível (`"1"` a `"5"`), `rank_base`, flags `oculta` e `especial`.
+- Adicionar categorias novas: `tensao_psicologica` (oculta), `coringa` (especial), `virada` (especial).
+- Textos com variáveis `{ativo} {passivo} {pronome} {pronome_cap} {dele_dela} {dele_dela_ativo} {local}`.
+- S/M (impact) com array `locais`.
 
-## Estrutura de arquivos
+**1.2 Sistema de jogadores + gênero** (store)
+- Adicionar ao store: `jogador1 {nome, genero}`, `jogador2 {nome, genero}`, `controle: 'aleatorio'|'j1'|'j2'`.
+- Persistir em sessionStorage.
+- A cada nova carta, calcular `ativo`/`passivo` conforme `controle`.
 
-```text
-src/
-  routes/
-    __root.tsx          (head SEO, sem nav visível)
-    index.tsx           (Setup)
-    play.tsx            (Arena)
-    aftercare.tsx       (Aftercare)
-  data/
-    challenges.ts       (JSON embutido com tipagem)
-  lib/
-    engine.ts           (gerador de desafios: standard + combinado + injeção de props + locais)
-    store.ts            (Zustand)
-  components/
-    SafeWordButton.tsx  (botão flutuante vermelho persistente)
-    ChallengeCard.tsx   (carta animada com badge de categoria/intensidade)
-    CountdownTimer.tsx  (timer integrado quando o desafio tem duração)
-    CategoryToggle.tsx  (switch neon com borda glow por categoria)
-    PropChip.tsx        (chips selecionáveis de props)
-  styles.css            (tokens dark room + cores de categoria em oklch)
-```
+**1.3 Motor de substituição** (`src/lib/text.ts` novo)
+- Função `interpolate(texto, {ativo, passivo})` que troca todas as variáveis.
+- Pronomes derivados do gênero do passivo/ativo.
 
-## Tela 1 — Setup (`/`)
+**1.4 Motor de props como camada adicional** (`engine.ts`)
+- Mapa `PROP_HINTS` (venda/gelo/corda/etc → frase extra).
+- Retorna `{ text, propHint? }`. Card exibe propHint em itálico.
+- Match por keywords (categoria/texto compatível).
 
-- **Header**: "DARK ROOM" em uppercase tracking-wide, subtítulo discreto.
-- **Safe Word**: input grande, alta visibilidade, obrigatório (validação zod min 2 chars). Salvo no store.
-- **Categorias** (7 toggles com cor neon própria por categoria):
-  - B — Amarras & Contenção
-  - D — Disciplina & Dinâmicas de Poder
-  - Sensory — Privação & Estímulos
-  - S/M — Impacto & Temperatura
-  - K — Fetiches & Adoração Corporal
-  - Ângulos & Encaixes
-  - Endurance — Resistência
-- **Props disponíveis** (chips toggle): Venda, Gelos, Cordas/Faixas, Vela de Massagem, Paddle/Palmatória, Pluma/Pincel, Mordaça, Gravata/Lenço, Almofada.
-- **Modo**: switch entre "Modo Padrão" e "Modo Combinado".
-- **CTA**: "INICIAR SESSÃO" (desabilitado se faltar Safe Word ou nenhuma categoria ativa) → `/play`.
+## Fase 2 — Sistema de níveis (5 níveis)
 
-## Tela 2 — Arena (`/play`)
+**2.1** Substituir `LEVELS` (3 → 5): IGNIÇÃO/SEDUÇÃO/TENSÃO/ENTREGA/ÁPICE com thresholds 0/20/50/100/180 e cores definidas.
+**2.2** `levelForScore` atualizado. `IntensityRank = 1..5`.
+**2.3** Pontuação: +10 concluído, +15 c/ timer, +5 combinado, +20 carta de virada.
+**2.4** Filtro de cartas no engine: nível da ação ≤ nível atual.
 
-- **Top bar minimalista**: contador de rodadas concluídas + badge da categoria atual.
-- **Carta central** (ChallengeCard):
-  - Borda neon com cor da categoria sorteada (ou gradiente das duas no modo combinado).
-  - Nome da categoria em uppercase + intensidade (baixa/média/alta — derivada por heurística do tipo de ação).
-  - Texto do desafio gerado pelo engine.
-  - CountdownTimer renderizado automaticamente se o texto mencionar duração ("2 minutos", "3 minutos", "5 minutos", "10 minutos", "30 segundos") — regex extrai e inicia.
-  - Animação fade + slight scale na entrada; swipe horizontal ao "Pular".
-- **Botões de ação** (parte inferior):
-  - "CONCLUÍDO" → incrementa contador, sorteia próxima.
-  - "PULAR / TROCAR" → re-rola sem incrementar.
-- **Safe Word flutuante** (SafeWordButton): canto inferior, vermelho neon pulsante, sempre visível. Tap → confirmação rápida → limpa estado de jogo (mantém setup) → redireciona `/aftercare`.
+## Fase 3 — Cartas especiais
 
-## Tela 3 — Aftercare (`/aftercare`)
+**3.1 Coringa**: 1 a cada ~15 sorteios (contador no store). Renderiza tela única (fundo branco, texto preto "{ativo} decide."). Componente `JokerCard`.
+**3.2 Virada**: a cada 5 rodadas concluídas, força próxima carta como virada. Inverte ativo/passivo só naquela rodada. +20 pts. Borda laranja pulsante. Componente `TwistCard`.
+**3.3 Tensão Psicológica**: a cada 4 rodadas concluídas, força carta dessa categoria (oculta, sem toggle). Borda cinza sutil.
 
-- Tom acolhedor, mínimo, sem neon agressivo (acento suave).
-- Texto de apoio: respiração, hidratação, contato físico de conforto, validação mútua.
-- Botão "Voltar ao Setup" → `/`.
+Engine decide a sequência: virada > tensão psicológica > coringa (probabilístico) > sorteio normal.
 
-## Engine (`lib/engine.ts`)
+## Fase 4 — Setup expandido (`/`)
 
-```ts
-type CategoryKey = keyof typeof challenges.categorias;
+Ordem de seções:
+- **00 · Jogadores**: 2 nomes + gênero (M/F) + "Quem comanda" (3 botões).
+- **01 · Safe Word** (existente).
+- **02 · Categorias** (com glow ativo — já existente, refinar).
+- **03 · Props** como chips com check (refazer visual).
+- **04 · Modo de jogo**: Padrão / Combinado.
+- **05 · Pontuação**: Juntos / Competitivo (+ campos secretos de recompensa quando competitivo).
+- **06 · Ritual de abertura** (toggle, padrão on).
 
-function drawChallenge(active: CategoryKey[], mode: 'standard'|'combined', props: string[]): {
-  text: string;
-  categories: CategoryKey[];
-  durationSeconds?: number;
-}
-```
+Validação: nomes obrigatórios + safe word + ≥1 categoria.
 
-- **Standard**: escolhe 1 categoria ativa aleatória, 1 ação aleatória. Se categoria for `impact_sensacoes`, concatena ação + local aleatório do array `locais`.
-- **Combined**: escolhe 2 categorias ativas distintas (fallback para standard se só houver 1 ativa), sorteia 1 ação de cada, junta com separador " + " ou " • " e nova linha.
-- **Injeção de props**: substitui placeholders genéricos ("faixa", "tecido", "vela de massagem", "paddle", "venda", etc.) pelos props efetivamente selecionados; se prop necessário não está disponível, descarta a ação e sorteia de novo (até N tentativas).
-- **Extração de duração**: regex em pt-BR captura "X minutos|segundos" → retorna `durationSeconds` para o timer.
-- **Anti-repetição**: mantém últimos 5 IDs sorteados no store, evita repetir.
+## Fase 5 — Fluxo de jogo (`/play`)
 
-## Design system (`styles.css`)
+**5.1 Ritual** (`/ritual` nova rota ou overlay): tela fullscreen com timer 30s opcional, botão "Estamos prontos".
+**5.2 Card redesenhado** (`ChallengeCard`):
+- Topo: linha "{ativo} comanda · {passivo} recebe" + badges (categoria + intensidade).
+- Centro: texto 18-20px, respiro generoso.
+- Prop hint em itálico, opacity 70%.
+- Timer como arco SVG circular (sem números), pulsa ao zerar.
+**5.3 Animações**: flip de entrada (rotateY 0.4s), concluir → slide up + fade, pular → slide left + fade. Framer-motion.
+**5.4 Barra de progressão narrativa**: nome do nível atual ← barra com glow → próximo nível. Sem números. Micro-pulso ao pontuar.
+**5.5 Safe word discreto**: ícone ⬡ canto superior direito, expande no hover/touch para botão completo.
+**5.6 Level-up cinematográfico**: fullscreen, nome 72-80px na cor do nível, subtítulo, glow pulsante, botão "Continuar" aparece após 2.5s.
+**5.7 Micro-animações**: "+10/+15" sobe e some em verde neon perto da barra ao pontuar.
 
-Tokens em `oklch`, tema dark forçado:
+## Fase 6 — Final de sessão
 
-- `--background`: oklch(0 0 0) — preto puro
-- `--foreground`: oklch(0.96 0 0)
-- `--muted-foreground`: oklch(0.6 0 0)
-- `--border`: oklch(0.2 0 0)
-- `--safe-word`: oklch(0.62 0.25 25) — vermelho neon
-- Cores por categoria (acentos neon):
-  - bondage: oklch(0.7 0.2 290) — violeta
-  - disciplina: oklch(0.75 0.18 60) — âmbar
-  - sensory: oklch(0.75 0.18 200) — ciano
-  - impact: oklch(0.7 0.25 15) — vermelho-rosa
-  - fetiches: oklch(0.7 0.22 330) — magenta
-  - posicoes: oklch(0.78 0.18 150) — verde-menta
-  - endurance: oklch(0.78 0.18 90) — lima
-- Sombras glow: `box-shadow: 0 0 24px color-mix(in oklab, var(--cat-color) 40%, transparent)`.
+**6.1 Aftercare** (`/aftercare`): visual invertido (bege `#F5F0EB`, texto escuro, sem neon). Texto diferente para safe-word vs. encerramento normal. Cross-fade 0.8s. Botão único "Estamos bem." → histórico.
+**6.2 Histórico** (`/historia` nova rota): nível alcançado, rodadas, top 3 categorias, tempo total, pulos, carta mais intensa. Se competitivo: revela recompensa do vencedor (quem recebeu mais soma de níveis como passivo). Botão "Nova sessão" → `/`.
 
-**Tipografia**: headers em "Space Grotesk" uppercase tracking-widest; corpo em "Inter" — importados via `@import` no `styles.css` (Google Fonts).
-
-## SEO & metadata
-
-- `__root.tsx`: title "Dark Room", description neutra/discreta, sem og:image (conteúdo sensível, evitar preview).
-- `noindex` meta para evitar indexação.
-- Aviso de conteúdo adulto na entrada (modal one-time, aceite salvo em localStorage).
+Store rastreia: `startedAt`, `roundsCompleted`, `skips`, `categoryCounts`, `maxLevelPlayed`, `passiveLoad: {j1, j2}`.
 
 ## Detalhes técnicos
 
-- **Sem backend / sem analytics**: tudo client-side, `sessionStorage` para persistir setup durante refresh.
-- **Acessibilidade**: contraste alto (preto + neon), foco visível, botão Safe Word com `aria-label` claro, `role="alert"` na transição para aftercare.
-- **Responsivo mobile-first** (viewport atual 390px): carta ocupa ~85vh em mobile, max-width 480px em desktop.
-- **Dependências novas**: `zustand`, `framer-motion`, `zod` (já presente em forms shadcn).
+- Cores dos níveis como CSS vars em `styles.css`: `--lvl-1` … `--lvl-5`.
+- Tipos: `IntensityRank = 1|2|3|4|5`, `CategoryKey` expandido.
+- Engine retorna `DrawResult = { kind: 'normal'|'joker'|'twist'|'tension', challenge, ativo, passivo, levelOfCard }`.
+- Cron interno via contadores no store (não usar timers globais).
+- `framer-motion` já instalado — usar `AnimatePresence` com `mode="wait"`.
 
-## Aviso
+## Escopo desta sessão
 
-O conteúdo do JSON é explícito e voltado para adultos consentâneos. O app inclui gate de idade/consentimento na primeira visita e Safe Word obrigatório como salvaguarda primária. Não há moderação ou edição do texto fornecido — será embutido como está.
+Implementarei tudo de uma vez (volume grande, mas coerente). Se algo ficar limítrofe, sinalizo. Conteúdo dos desafios: vou escrever um banco enxuto mas funcional (10–15 ações por nível, por categoria) usando as variáveis — você refina depois se quiser mais volume.
+
+Posso seguir?
