@@ -42,13 +42,29 @@ function SetupPage() {
   } = s;
 
   const activeCount = (Object.keys(categories) as CategoryKey[]).filter((k) => categories[k]).length;
+  const [schema, setSchema] = useState<ValidationResult | null>(null);
+  useEffect(() => {
+    const r = validateChallenges();
+    setSchema(r);
+    if (!r.ok) console.error("[Dark Room] Schema inválido:", r.errors);
+    if (r.warnings.length > 0) console.warn("[Dark Room] Schema warnings:", r.warnings);
+  }, []);
+
   const canStart =
+    !!schema?.ok &&
     safeWord.trim().length >= 2 &&
     activeCount >= 1 &&
     jogador1.nome.trim().length >= 1 &&
     jogador2.nome.trim().length >= 1;
 
   const start = () => {
+    const r = schema ?? validateChallenges();
+    if (!r.ok) {
+      toast.error("Banco de desafios inválido", {
+        description: `${r.errors.length} erro(s). Veja o console.`,
+      });
+      return;
+    }
     if (!canStart) return;
     resetGame();
     navigate({ to: "/play" });
@@ -57,6 +73,23 @@ function SetupPage() {
   return (
     <div className="min-h-screen bg-background px-5 py-10 pb-32">
       <div className="mx-auto max-w-md">
+        {schema && !schema.ok && (
+          <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+            <p className="font-display uppercase tracking-[0.2em]">
+              Schema com {schema.errors.length} erro(s)
+            </p>
+            <ul className="mt-2 space-y-1">
+              {schema.errors.slice(0, 5).map((e, i) => (
+                <li key={i} className="font-mono opacity-80">
+                  · {e.path}: {e.message}
+                </li>
+              ))}
+              {schema.errors.length > 5 && (
+                <li className="opacity-70">… +{schema.errors.length - 5} (ver console)</li>
+              )}
+            </ul>
+          </div>
+        )}
         <header className="text-center">
           <p className="font-display text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
             Couples · Kink · Power
