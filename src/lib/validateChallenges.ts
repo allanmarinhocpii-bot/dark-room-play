@@ -150,9 +150,11 @@ export function validateChallenges(): ValidationResult {
   PROPS.forEach((p, i) => {
     if (!p.id || !p.label || !p.hint)
       errors.push({ level: "error", path: `PROPS[${i}]`, message: "campos faltando" });
-    if (!Array.isArray(p.keywords) || p.keywords.length === 0)
+    const kw = p.keywords as readonly string[] | undefined;
+    if (!Array.isArray(kw) || kw.length === 0)
       errors.push({ level: "error", path: `PROPS[${i}].keywords`, message: "vazio" });
-    if (!Array.isArray(p.fitCats) || p.fitCats.length === 0)
+    const fc = p.fitCats as readonly string[] | undefined;
+    if (!Array.isArray(fc) || fc.length === 0)
       errors.push({ level: "error", path: `PROPS[${i}].fitCats`, message: "vazio" });
     p.fitCats?.forEach((c) => {
       if (!CATEGORIAS[c as CategoryKey])
