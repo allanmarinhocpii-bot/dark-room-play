@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useSessionStore } from "@/lib/store";
 import { CATEGORIAS, PROPS, type CategoryKey, type PropId } from "@/data/challenges";
+import { validateChallenges, type ValidationResult } from "@/lib/validateChallenges";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
