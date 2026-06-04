@@ -155,7 +155,7 @@ export function validateChallenges(): ValidationResult {
     if (!Array.isArray(p.fitCats) || p.fitCats.length === 0)
       errors.push({ level: "error", path: `PROPS[${i}].fitCats`, message: "vazio" });
     p.fitCats?.forEach((c) => {
-      if (!CATEGORIAS[c])
+      if (!CATEGORIAS[c as CategoryKey])
         errors.push({
           level: "error",
           path: `PROPS[${i}].fitCats`,
