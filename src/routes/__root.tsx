@@ -81,6 +81,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "robots", content: "noindex, nofollow" },
       { title: "Dark Room" },
       { name: "description", content: "Jogo íntimo para casais adultos consentâneos." },
+      { property: "og:title", content: "Dark Room" },
+      { name: "twitter:title", content: "Dark Room" },
+      { property: "og:description", content: "Jogo íntimo para casais adultos consentâneos." },
+      { name: "twitter:description", content: "Jogo íntimo para casais adultos consentâneos." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8f03ddba-cfcb-43bc-bb95-5c6f35b1bd36/id-preview-f92e7222--8492d186-f55f-435d-b017-f980a90b5e9c.lovable.app-1780756816703.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8f03ddba-cfcb-43bc-bb95-5c6f35b1bd36/id-preview-f92e7222--8492d186-f55f-435d-b017-f980a90b5e9c.lovable.app-1780756816703.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {
