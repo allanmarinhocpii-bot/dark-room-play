@@ -220,13 +220,13 @@ function SetupPage() {
                 <button
                   key={p.id}
                   onClick={() => toggleProp(p.id as PropId)}
-                  className={`rounded-full border px-3.5 py-2 font-display text-[11px] uppercase tracking-[0.18em] transition active:scale-105 ${
+                  className={`rounded-full border px-3.5 py-2 font-display text-[11px] uppercase tracking-[0.18em] transition-all duration-150 active:scale-105 ${
                     active
-                      ? "border-foreground bg-[#1a1a1a] text-foreground"
+                      ? "border-white bg-white/10 text-white shadow-[0_0_8px_rgba(255,255,255,0.2)]"
                       : "border-[#333] text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {active && <span className="mr-1.5 text-[8px]">✓</span>}
+                  {active && <span className="mr-1.5 text-[9px]">✓</span>}
                   {p.label}
                 </button>
               );
