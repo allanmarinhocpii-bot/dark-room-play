@@ -64,13 +64,17 @@
   --ring: oklch(0.5 0 0);
 
   --safe-word: oklch(0.65 0.27 25);
-  --cat-bondage: oklch(0.72 0.2 290);
+  --cat-bondage: #A78BFA;
   --cat-disciplina: oklch(0.78 0.18 65);
   --cat-sensory: oklch(0.78 0.18 210);
-  --cat-impact: oklch(0.7 0.25 15);
-  --cat-fetiches: oklch(0.72 0.22 330);
+  --cat-impact: #EF4444;
+  --cat-fetiches: #EC4899;
   --cat-posicoes: oklch(0.8 0.18 155);
-  --cat-endurance: oklch(0.82 0.18 95);
+  --cat-endurance: #8B5CF6;
+
+  --cat-coringa: #FFFFFF;
+  --cat-virada: #F97316;
+  --cat-tensao-psico: #4B5563;
 }
 
 @layer base {
