@@ -43,6 +43,8 @@ function SetupPage() {
 
   const activeCount = (Object.keys(categories) as CategoryKey[]).filter((k) => categories[k]).length;
   const [schema, setSchema] = useState<ValidationResult | null>(null);
+  const [tentouIniciar, setTentouIniciar] = useState(false);
+
   useEffect(() => {
     const r = validateChallenges();
     setSchema(r);
@@ -50,22 +52,25 @@ function SetupPage() {
     if (r.warnings.length > 0) console.warn("[Dark Room] Schema warnings:", r.warnings);
   }, []);
 
-  const canStart =
-    !!schema?.ok &&
-    safeWord.trim().length >= 2 &&
-    activeCount >= 1 &&
-    jogador1.nome.trim().length >= 1 &&
-    jogador2.nome.trim().length >= 1;
+  const getMensagemBloqueio = () => {
+    if (!jogador1.nome.trim() && !jogador2.nome.trim()) return "Preencha os nomes dos dois jogadores.";
+    if (!jogador1.nome.trim()) return "Preencha o nome do Jogador 1.";
+    if (!jogador2.nome.trim()) return "Preencha o nome do Jogador 2.";
+    if (safeWord.trim().length < 2) return "Defina a safe word antes de começar.";
+    if (activeCount < 1) return "Ative ao menos uma categoria.";
+    if (schema && !schema.ok) return "Banco de desafios inválido.";
+    return "";
+  };
 
-  const start = () => {
-    const r = schema ?? validateChallenges();
-    if (!r.ok) {
-      toast.error("Banco de desafios inválido", {
-        description: `${r.errors.length} erro(s). Veja o console.`,
-      });
+  const mensagemBloqueio = getMensagemBloqueio();
+  const podeIniciar = !mensagemBloqueio;
+
+  const handleStart = () => {
+    if (mensagemBloqueio) {
+      setTentouIniciar(true);
       return;
     }
-    if (!canStart) return;
+    setTentouIniciar(false);
     resetGame();
     navigate({ to: "/play" });
   };
