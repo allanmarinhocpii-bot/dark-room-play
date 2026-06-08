@@ -317,15 +317,15 @@ function SetupPage() {
               </p>
             </div>
             <span
-              className="h-5 w-9 rounded-full border transition"
+              className="relative h-5 w-9 rounded-full border transition"
               style={{
                 borderColor: ritual ? "var(--foreground)" : "var(--color-border)",
-                background: ritual ? "color-mix(in oklab, var(--foreground) 70%, transparent)" : "transparent",
+                background: ritual ? "var(--foreground)" : "transparent",
               }}
             >
               <span
-                className="block h-full w-4 rounded-full bg-background transition-transform"
-                style={{ transform: ritual ? "translateX(18px)" : "translateX(1px)" }}
+                className="absolute top-0.5 left-0.5 block h-4 w-4 rounded-full bg-background transition-transform"
+                style={{ transform: ritual ? "translateX(16px)" : "translateX(0px)" }}
               />
             </span>
           </button>
