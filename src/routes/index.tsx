@@ -43,6 +43,8 @@ function SetupPage() {
 
   const activeCount = (Object.keys(categories) as CategoryKey[]).filter((k) => categories[k]).length;
   const [schema, setSchema] = useState<ValidationResult | null>(null);
+  const [tentouIniciar, setTentouIniciar] = useState(false);
+
   useEffect(() => {
     const r = validateChallenges();
     setSchema(r);
@@ -50,22 +52,25 @@ function SetupPage() {
     if (r.warnings.length > 0) console.warn("[Dark Room] Schema warnings:", r.warnings);
   }, []);
 
-  const canStart =
-    !!schema?.ok &&
-    safeWord.trim().length >= 2 &&
-    activeCount >= 1 &&
-    jogador1.nome.trim().length >= 1 &&
-    jogador2.nome.trim().length >= 1;
+  const getMensagemBloqueio = () => {
+    if (!jogador1.nome.trim() && !jogador2.nome.trim()) return "Preencha os nomes dos dois jogadores.";
+    if (!jogador1.nome.trim()) return "Preencha o nome do Jogador 1.";
+    if (!jogador2.nome.trim()) return "Preencha o nome do Jogador 2.";
+    if (safeWord.trim().length < 2) return "Defina a safe word antes de começar.";
+    if (activeCount < 1) return "Ative ao menos uma categoria.";
+    if (schema && !schema.ok) return "Banco de desafios inválido.";
+    return "";
+  };
 
-  const start = () => {
-    const r = schema ?? validateChallenges();
-    if (!r.ok) {
-      toast.error("Banco de desafios inválido", {
-        description: `${r.errors.length} erro(s). Veja o console.`,
-      });
+  const mensagemBloqueio = getMensagemBloqueio();
+  const podeIniciar = !mensagemBloqueio;
+
+  const handleStart = () => {
+    if (mensagemBloqueio) {
+      setTentouIniciar(true);
       return;
     }
-    if (!canStart) return;
+    setTentouIniciar(false);
     resetGame();
     navigate({ to: "/play" });
   };
@@ -215,13 +220,13 @@ function SetupPage() {
                 <button
                   key={p.id}
                   onClick={() => toggleProp(p.id as PropId)}
-                  className={`rounded-full border px-3.5 py-2 font-display text-[11px] uppercase tracking-[0.18em] transition active:scale-105 ${
+                  className={`rounded-full border px-3.5 py-2 font-display text-[11px] uppercase tracking-[0.18em] transition-all duration-150 active:scale-105 ${
                     active
-                      ? "border-foreground bg-[#1a1a1a] text-foreground"
+                      ? "border-white bg-white/10 text-white shadow-[0_0_8px_rgba(255,255,255,0.2)]"
                       : "border-[#333] text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {active && <span className="mr-1.5 text-[8px]">✓</span>}
+                  {active && <span className="mr-1.5 text-[9px]">✓</span>}
                   {p.label}
                 </button>
               );
@@ -312,34 +317,31 @@ function SetupPage() {
               </p>
             </div>
             <span
-              className="h-5 w-9 rounded-full border transition"
+              className="relative h-5 w-9 rounded-full border transition"
               style={{
                 borderColor: ritual ? "var(--foreground)" : "var(--color-border)",
-                background: ritual ? "color-mix(in oklab, var(--foreground) 70%, transparent)" : "transparent",
+                background: ritual ? "var(--foreground)" : "transparent",
               }}
             >
               <span
-                className="block h-full w-4 rounded-full bg-background transition-transform"
-                style={{ transform: ritual ? "translateX(18px)" : "translateX(1px)" }}
+                className="absolute top-0.5 left-0.5 block h-4 w-4 rounded-full bg-background transition-transform"
+                style={{ transform: ritual ? "translateX(16px)" : "translateX(0px)" }}
               />
             </span>
           </button>
         </Section>
 
         <button
-          onClick={start}
-          disabled={!canStart}
-          className="mt-12 w-full rounded-md bg-foreground py-4 font-display text-sm uppercase tracking-[0.3em] text-background disabled:cursor-not-allowed disabled:opacity-30"
+          onClick={handleStart}
+          className={`mt-12 w-full rounded-md py-4 font-display text-sm uppercase tracking-[0.3em] text-background transition-opacity ${
+            podeIniciar ? "bg-foreground" : "bg-foreground/50"
+          }`}
         >
           Iniciar Sessão
         </button>
-        {!canStart && (
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            {jogador1.nome.trim() === "" || jogador2.nome.trim() === ""
-              ? "Preencha os nomes dos dois jogadores."
-              : safeWord.trim().length < 2
-              ? "Defina uma safe word."
-              : "Ative ao menos uma categoria."}
+        {tentouIniciar && mensagemBloqueio && (
+          <p className="mt-3 text-center text-[11px] text-red-400">
+            {mensagemBloqueio}
           </p>
         )}
       </div>
@@ -367,6 +369,12 @@ function PlayerInput({
   value: { nome: string; genero: "M" | "F" };
   onChange: (p: { nome?: string; genero?: "M" | "F" }) => void;
 }) {
+  const [localNome, setLocalNome] = useState(value.nome);
+
+  useEffect(() => {
+    setLocalNome(value.nome);
+  }, [value.nome]);
+
   return (
     <div>
       <p className="font-display text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
@@ -374,8 +382,13 @@ function PlayerInput({
       </p>
       <div className="mt-2 flex gap-2">
         <input
-          value={value.nome}
-          onChange={(e) => onChange({ nome: e.target.value.slice(0, 20) })}
+          value={localNome}
+          onChange={(e) => {
+            const v = e.target.value;
+            setLocalNome(v);
+            onChange({ nome: v });
+          }}
+          maxLength={20}
           placeholder="Nome"
           className="flex-1 rounded-md border border-border bg-input px-4 py-3 font-display text-sm tracking-wide text-foreground placeholder:text-muted-foreground/60 focus:border-foreground focus:outline-none"
         />
