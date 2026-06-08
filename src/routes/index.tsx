@@ -332,19 +332,16 @@ function SetupPage() {
         </Section>
 
         <button
-          onClick={start}
-          disabled={!canStart}
-          className="mt-12 w-full rounded-md bg-foreground py-4 font-display text-sm uppercase tracking-[0.3em] text-background disabled:cursor-not-allowed disabled:opacity-30"
+          onClick={handleStart}
+          className={`mt-12 w-full rounded-md py-4 font-display text-sm uppercase tracking-[0.3em] text-background transition-opacity ${
+            podeIniciar ? "bg-foreground" : "bg-foreground/50"
+          }`}
         >
           Iniciar Sessão
         </button>
-        {!canStart && (
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            {jogador1.nome.trim() === "" || jogador2.nome.trim() === ""
-              ? "Preencha os nomes dos dois jogadores."
-              : safeWord.trim().length < 2
-              ? "Defina uma safe word."
-              : "Ative ao menos uma categoria."}
+        {tentouIniciar && mensagemBloqueio && (
+          <p className="mt-3 text-center text-[11px] text-red-400">
+            {mensagemBloqueio}
           </p>
         )}
       </div>
