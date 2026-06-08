@@ -369,6 +369,12 @@ function PlayerInput({
   value: { nome: string; genero: "M" | "F" };
   onChange: (p: { nome?: string; genero?: "M" | "F" }) => void;
 }) {
+  const [localNome, setLocalNome] = useState(value.nome);
+
+  useEffect(() => {
+    setLocalNome(value.nome);
+  }, [value.nome]);
+
   return (
     <div>
       <p className="font-display text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
@@ -376,8 +382,13 @@ function PlayerInput({
       </p>
       <div className="mt-2 flex gap-2">
         <input
-          value={value.nome}
-          onChange={(e) => onChange({ nome: e.target.value.slice(0, 20) })}
+          value={localNome}
+          onChange={(e) => {
+            const v = e.target.value;
+            setLocalNome(v);
+            onChange({ nome: v });
+          }}
+          maxLength={20}
           placeholder="Nome"
           className="flex-1 rounded-md border border-border bg-input px-4 py-3 font-display text-sm tracking-wide text-foreground placeholder:text-muted-foreground/60 focus:border-foreground focus:outline-none"
         />
