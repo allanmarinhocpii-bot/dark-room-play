@@ -1,9 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useSessionStore } from "@/lib/store";
 import { draw, type DrawResult } from "@/lib/engine";
-import { type CategoryKey, type PropId, type IntensityRank } from "@/data/challenges";
+import {
+  CATEGORIAS,
+  INTENSITY_LABEL,
+  PROPS,
+  type CategoryKey,
+  type PropId,
+  type IntensityRank,
+} from "@/data/challenges";
 import { ChallengeCard, type ExitDirection } from "@/components/ChallengeCard";
 import { JokerCard } from "@/components/JokerCard";
 import { TwistCard } from "@/components/TwistCard";
@@ -13,6 +20,7 @@ import { LevelUpOverlay } from "@/components/LevelUpOverlay";
 import { ProgressionBar } from "@/components/ProgressionBar";
 import { PointBurst } from "@/components/PointBurst";
 import { RitualOverlay } from "@/components/RitualOverlay";
+import { generateCard } from "@/services/cardGenerator";
 
 export const Route = createFileRoute("/play")({
   head: () => ({
@@ -54,6 +62,14 @@ function PlayPage() {
     () => (Object.keys(props) as PropId[]).filter((k) => props[k]),
     [props],
   );
+  const activePropLabels = useMemo<string[]>(
+    () =>
+      activeProps.flatMap((id) => {
+        const label = PROPS.find((p) => p.id === id)?.label;
+        return label ? [label] : [];
+      }),
+    [activeProps],
+  );
 
   const [card, setCard] = useState<DrawResult | null>(null);
   const [cardId, setCardId] = useState(0);
@@ -62,24 +78,11 @@ function PlayPage() {
   const [burst, setBurst] = useState<number | null>(null);
   const [showRitual, setShowRitual] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [loadingNext, setLoadingNext] = useState(false);
 
-  // Hydration + initial setup
-  useEffect(() => {
-    if (!hasHydrated || initialized) return;
-    if (!safeWord || activeCats.length === 0 || !jogador1.nome || !jogador2.nome) {
-      navigate({ to: "/" });
-      return;
-    }
-    setShowRitual(ritual);
-    if (!ritual) {
-      const c = drawNext();
-      if (c) setCard(c);
-    }
-    setInitialized(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasHydrated]);
+  const lastTextsRef = useRef<string[]>([]);
 
-  const drawNext = (): DrawResult | null => {
+  const drawNext = async (): Promise<DrawResult | null> => {
     const c = draw({
       jogador1,
       jogador2,
@@ -91,8 +94,33 @@ function PlayPage() {
       roundsCompleted: useSessionStore.getState().stats.roundsCompleted,
       cardsDrawn: useSessionStore.getState().stats.cardsDrawn,
     });
-    if (c) {
-      recordDraw(c.categories[0] ?? null, c.kind === "normal" ? c.level : null);
+    if (!c) return null;
+    recordDraw(c.categories[0] ?? null, c.kind === "normal" ? c.level : null);
+
+    if (c.kind === "normal") {
+      const catKey = c.categories[0];
+      const categoriaNome = catKey ? CATEGORIAS[catKey].nome : "Livre";
+      const result = await generateCard({
+        carta_base: c.text,
+        ativo: c.ativo.nome,
+        passivo: c.passivo.nome,
+        genero_ativo: c.ativo.genero,
+        genero_passivo: c.passivo.genero,
+        categoria: categoriaNome,
+        nivel: INTENSITY_LABEL[c.level],
+        props_ativos: activePropLabels,
+        modo: mode === "combined" ? "combinado" : "padrao",
+        rodada: useSessionStore.getState().stats.roundsCompleted + 1,
+        ultimas_cartas: lastTextsRef.current.slice(-3),
+      });
+      c.text = result.texto;
+      if (result.segundos && result.segundos > 0) {
+        c.durationSeconds = result.segundos;
+      }
+      if (result.prop_usado) {
+        c.propHint = undefined; // o prop já está embutido no texto
+      }
+      lastTextsRef.current = [...lastTextsRef.current, result.texto].slice(-5);
     }
     return c;
   };
@@ -101,12 +129,35 @@ function PlayPage() {
     setCard(c);
     setCardId((i) => i + 1);
     setExitDir("none");
+    setLoadingNext(false);
   };
+
+  const loadNext = async () => {
+    setLoadingNext(true);
+    const next = await drawNext();
+    advanceTo(next);
+  };
+
+  // Hydration + initial setup
+  useEffect(() => {
+    if (!hasHydrated || initialized) return;
+    if (!safeWord || activeCats.length === 0 || !jogador1.nome || !jogador2.nome) {
+      navigate({ to: "/" });
+      return;
+    }
+    setShowRitual(ritual);
+    setInitialized(true);
+    if (!ritual) {
+      void loadNext();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasHydrated]);
 
   const handleSkip = () => {
     recordSkip();
     setExitDir("left");
-    setTimeout(() => advanceTo(drawNext()), 50);
+    setCard(null);
+    setTimeout(() => void loadNext(), 50);
   };
 
   const handleComplete = () => {
@@ -129,13 +180,15 @@ function PlayPage() {
     if (leveledUp) {
       setTimeout(() => setLevelUpTo(newLevel), 250);
     } else {
-      setTimeout(() => advanceTo(drawNext()), 280);
+      setCard(null);
+      setTimeout(() => void loadNext(), 280);
     }
   };
 
   const dismissLevelUp = () => {
     setLevelUpTo(null);
-    advanceTo(drawNext());
+    setCard(null);
+    void loadNext();
   };
 
   const finishSession = () => {
@@ -154,8 +207,8 @@ function PlayPage() {
   }
 
   if (showRitual) {
-    const ativoNome = controle === "j2" ? jogador2.nome : controle === "j1" ? jogador1.nome : jogador1.nome;
-    const passivoNome = controle === "j2" ? jogador1.nome : controle === "j1" ? jogador2.nome : jogador2.nome;
+    const ativoNome = controle === "j2" ? jogador2.nome : jogador1.nome;
+    const passivoNome = controle === "j2" ? jogador1.nome : jogador2.nome;
     return (
       <RitualOverlay
         ativoNome={ativoNome}
@@ -163,11 +216,16 @@ function PlayPage() {
         safeWord={safeWord}
         onReady={() => {
           setShowRitual(false);
-          advanceTo(drawNext());
+          void loadNext();
         }}
       />
     );
   }
+
+  const loadingColor =
+    card?.kind === "normal" && card.categories[0]
+      ? CATEGORIAS[card.categories[0]].colorVar
+      : "var(--foreground)";
 
   return (
     <div className="relative min-h-screen bg-background px-5 pb-40 pt-6">
@@ -190,6 +248,26 @@ function PlayPage() {
       </header>
 
       <main className="mx-auto mt-10 flex max-w-md flex-col items-center">
+        {loadingNext && !card && (
+          <div className="flex h-72 w-full max-w-md flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card">
+            <div className="flex gap-2">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-1.5 w-1.5 animate-pulse rounded-full"
+                  style={{
+                    backgroundColor: loadingColor,
+                    animationDelay: `${i * 0.15}s`,
+                  }}
+                />
+              ))}
+            </div>
+            <p className="font-display text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              Sorteando
+            </p>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {card?.kind === "joker" && (
             <JokerCard key={cardId} cardKey={String(cardId)} ativoNome={card.ativo.nome} />
@@ -228,7 +306,7 @@ function PlayPage() {
           )}
         </AnimatePresence>
 
-        {card && (
+        {card && !loadingNext && (
           <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-3">
             <button
               onClick={handleSkip}
