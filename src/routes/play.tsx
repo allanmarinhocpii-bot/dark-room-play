@@ -62,11 +62,12 @@ function PlayPage() {
     () => (Object.keys(props) as PropId[]).filter((k) => props[k]),
     [props],
   );
-  const activePropLabels = useMemo(
+  const activePropLabels = useMemo<string[]>(
     () =>
-      activeProps
-        .map((id) => PROPS.find((p) => p.id === id)?.label)
-        .filter((x): x is string => !!x),
+      activeProps.flatMap((id) => {
+        const label = PROPS.find((p) => p.id === id)?.label;
+        return label ? [label] : [];
+      }),
     [activeProps],
   );
 
