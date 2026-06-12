@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { CATEGORIAS, INTENSITY_LABEL, type CategoryKey, type IntensityRank } from "@/data/challenges";
-import { ArcTimer } from "./ArcTimer";
+import { TimerArco } from "./TimerArco";
 
 export type ExitDirection = "up" | "left" | "none";
 
@@ -29,6 +29,7 @@ export function ChallengeCard({
   const secondary = categories[1];
   const primaryColor = primary ? CATEGORIAS[primary].colorVar : "var(--foreground)";
   const secondaryColor = secondary ? CATEGORIAS[secondary].colorVar : primaryColor;
+  const primaryName = primary ? CATEGORIAS[primary].short : "Livre";
 
   const exit =
     exitDir === "up"
@@ -44,58 +45,60 @@ export function ChallengeCard({
       animate={{ opacity: 1, rotateY: 0 }}
       exit={exit}
       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      style={
-        {
-          "--cat-color": primaryColor,
-          backgroundImage: secondary
-            ? `linear-gradient(135deg, color-mix(in oklab, ${primaryColor} 7%, transparent), color-mix(in oklab, ${secondaryColor} 7%, transparent))`
-            : undefined,
-          perspective: 1000,
-        } as React.CSSProperties
-      }
-      className="glow-cat relative w-full max-w-md rounded-2xl border border-border bg-card p-7"
+      style={{
+        borderColor: primaryColor,
+        boxShadow: `0 0 20px color-mix(in oklab, ${primaryColor} 13%, transparent)`,
+        backgroundImage: secondary
+          ? `linear-gradient(135deg, color-mix(in oklab, ${primaryColor} 7%, transparent), color-mix(in oklab, ${secondaryColor} 7%, transparent))`
+          : undefined,
+        perspective: 1000,
+      }}
+      className="relative w-full max-w-md rounded-xl border bg-card p-6"
     >
-      <p
-        className="font-display text-[10px] uppercase tracking-[0.3em]"
-        style={{ color: primaryColor }}
-      >
-        {ativoNome} comanda · {passivoNome} recebe
-      </p>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {categories.map((c) => (
+      {/* ZONA 1 — Header */}
+      <div className="mb-5">
+        <p
+          className="mb-2 font-display text-[9px] uppercase tracking-[0.3em]"
+          style={{ color: primaryColor }}
+        >
+          {ativoNome} comanda · {passivoNome} recebe
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
           <span
-            key={c}
-            className="rounded-full border px-2.5 py-1 font-display text-[10px] uppercase tracking-[0.2em]"
-            style={{
-              borderColor: `color-mix(in oklab, ${CATEGORIAS[c].colorVar} 60%, transparent)`,
-              color: CATEGORIAS[c].colorVar,
-            }}
+            className="rounded-full border px-2.5 py-0.5 font-display text-[10px] uppercase tracking-[0.15em]"
+            style={{ borderColor: primaryColor, color: primaryColor }}
           >
-            {CATEGORIAS[c].short}
+            {primaryName}
           </span>
-        ))}
-        <span className="ml-auto font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          {INTENSITY_LABEL[level]}
-        </span>
+          {secondary && (
+            <span
+              className="rounded-full border px-2.5 py-0.5 font-display text-[10px] uppercase tracking-[0.15em]"
+              style={{ borderColor: secondaryColor, color: secondaryColor }}
+            >
+              {CATEGORIAS[secondary].short}
+            </span>
+          )}
+          <span className="ml-auto font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            {INTENSITY_LABEL[level]}
+          </span>
+        </div>
       </div>
 
-      <div className="mt-7 min-h-[180px]">
-        <p className="whitespace-pre-line text-[19px] leading-[1.55] text-foreground">{text}</p>
+      {/* ZONA 2 — Texto do desafio */}
+      <div className="min-h-[120px]">
+        <p className="whitespace-pre-line text-[17px] font-light leading-[1.75] text-foreground">
+          {text}
+        </p>
         {propHint && (
-          <>
-            <div className="mt-5 h-px w-12 bg-border" />
-            <p className="mt-4 text-[14px] italic leading-relaxed text-muted-foreground/80">
-              {propHint}
-            </p>
-          </>
+          <p className="mt-4 border-t border-border/20 pt-4 text-sm italic text-muted-foreground/65">
+            {propHint}
+          </p>
         )}
       </div>
 
+      {/* ZONA 3 — Timer */}
       {durationSeconds ? (
-        <div className="mt-7 flex justify-center border-t border-border pt-6">
-          <ArcTimer seconds={durationSeconds} resetKey={cardKey} color={primaryColor} />
-        </div>
+        <TimerArco segundos={durationSeconds} cor={primaryColor} resetKey={cardKey} />
       ) : null}
     </motion.div>
   );
