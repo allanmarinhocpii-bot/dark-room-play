@@ -275,43 +275,40 @@ function PlayPage() {
           </div>
         )}
 
-        <AnimatePresence mode="wait">
-          {card?.kind === "joker" && (
-            <JokerCard key={cardId} cardKey={String(cardId)} ativoNome={card.ativo.nome} />
-          )}
-          {card?.kind === "twist" && (
-            <TwistCard
-              key={cardId}
-              cardKey={String(cardId)}
-              text={card.text}
-              ativoNome={card.ativo.nome}
-              passivoNome={card.passivo.nome}
-            />
-          )}
-          {card?.kind === "tension" && (
-            <TensionCard
-              key={cardId}
-              cardKey={String(cardId)}
-              text={card.text}
-              ativoNome={card.ativo.nome}
-              passivoNome={card.passivo.nome}
-            />
-          )}
-          {card?.kind === "normal" && (
-            <ChallengeCard
-              key={cardId}
-              cardKey={String(cardId)}
-              text={card.text}
-              categories={card.categories}
-              durationSeconds={card.durationSeconds}
-              level={card.level}
-              ativoNome={card.ativo.nome}
-              passivoNome={card.passivo.nome}
-              propHint={card.propHint}
-              exitDir={exitDir}
-            />
-          )}
-        </AnimatePresence>
+        {card?.kind === "joker" && (
+          <JokerCard key={cardId} animation={cardAnim} ativoNome={card.ativo.nome} />
+        )}
+        {card?.kind === "twist" && (
+          <TwistCard
+            key={cardId}
+            animation={cardAnim}
+            text={card.text}
+            ativoNome={card.ativo.nome}
+            passivoNome={card.passivo.nome}
+          />
+        )}
+        {card?.kind === "tension" && (
+          <TensionCard
+            key={cardId}
+            animation={cardAnim}
+            text={card.text}
+            ativoNome={card.ativo.nome}
+            passivoNome={card.passivo.nome}
+          />
+        )}
+        {card?.kind === "normal" && (
+          <ChallengeCard
+            key={cardId}
+            animation={cardAnim}
+            text={card.text}
+            categories={card.categories}
+            durationSeconds={card.durationSeconds}
+            level={card.level}
+            ativoNome={card.ativo.nome}
+            passivoNome={card.passivo.nome}
+            propHint={card.propHint}
+          />
+        )}
 
         {card && !loadingNext && (
           <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-3">
