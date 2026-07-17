@@ -11,7 +11,7 @@ import {
   type PropId,
   type IntensityRank,
 } from "@/data/challenges";
-import { ChallengeCard, type ExitDirection } from "@/components/ChallengeCard";
+import { ChallengeCard, type CardAnimation } from "@/components/ChallengeCard";
 import { JokerCard } from "@/components/JokerCard";
 import { TwistCard } from "@/components/TwistCard";
 import { TensionCard } from "@/components/TensionCard";
