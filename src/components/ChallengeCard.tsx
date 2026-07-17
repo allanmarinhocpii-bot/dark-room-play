@@ -1,29 +1,26 @@
-import { motion } from "framer-motion";
 import { CATEGORIAS, INTENSITY_LABEL, type CategoryKey, type IntensityRank } from "@/data/challenges";
 import { TimerArco } from "./TimerArco";
 
-export type ExitDirection = "up" | "left" | "none";
+export type CardAnimation = "card-flip-in" | "card-enter-up" | "card-exit-up" | "card-exit-left" | null;
 
 export function ChallengeCard({
   text,
   categories,
   durationSeconds,
-  cardKey,
   level,
   ativoNome,
   passivoNome,
   propHint,
-  exitDir = "none",
+  animation = "card-flip-in",
 }: {
   text: string;
   categories: CategoryKey[];
   durationSeconds?: number;
-  cardKey: string;
   level: IntensityRank;
   ativoNome: string;
   passivoNome: string;
   propHint?: string;
-  exitDir?: ExitDirection;
+  animation?: CardAnimation;
 }) {
   const primary = categories[0];
   const secondary = categories[1];
@@ -31,20 +28,9 @@ export function ChallengeCard({
   const secondaryColor = secondary ? CATEGORIAS[secondary].colorVar : primaryColor;
   const primaryName = primary ? CATEGORIAS[primary].short : "Livre";
 
-  const exit =
-    exitDir === "up"
-      ? { y: -120, opacity: 0, scale: 0.95 }
-      : exitDir === "left"
-      ? { x: -160, opacity: 0, rotate: -4 }
-      : { opacity: 0, scale: 0.95 };
-
   return (
-    <motion.div
-      key={cardKey}
-      initial={{ opacity: 0, rotateY: -90 }}
-      animate={{ opacity: 1, rotateY: 0 }}
-      exit={exit}
-      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+    <div
+      className={`relative w-full max-w-md rounded-xl border bg-card p-6 ${animation ?? "card-flip-in"}`}
       style={{
         borderColor: primaryColor,
         boxShadow: `0 0 20px color-mix(in oklab, ${primaryColor} 13%, transparent)`,
@@ -53,7 +39,6 @@ export function ChallengeCard({
           : undefined,
         perspective: 1000,
       }}
-      className="relative w-full max-w-md rounded-xl border bg-card p-6"
     >
       {/* ZONA 1 — Header */}
       <div className="mb-5">
@@ -98,8 +83,8 @@ export function ChallengeCard({
 
       {/* ZONA 3 — Timer */}
       {durationSeconds ? (
-        <TimerArco segundos={durationSeconds} cor={primaryColor} resetKey={cardKey} />
+        <TimerArco segundos={durationSeconds} cor={primaryColor} />
       ) : null}
-    </motion.div>
+    </div>
   );
 }
