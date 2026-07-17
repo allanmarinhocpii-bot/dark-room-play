@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { LEVELS, type IntensityRank } from "@/data/challenges";
 
 export function ProgressionBar({ level, score }: { level: IntensityRank; score: number }) {
@@ -12,33 +11,28 @@ export function ProgressionBar({ level, score }: { level: IntensityRank; score: 
     : 100;
 
   return (
-    <div>
-      <div className="flex items-end justify-between">
-        <p
-          className="font-display text-[11px] uppercase tracking-[0.3em]"
-          style={{ color: current.accent }}
-        >
-          {current.name}
-        </p>
-        {next && (
-          <p className="font-display text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">
-            {next.name}
-          </p>
-        )}
-      </div>
-      <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-border/30">
-        <motion.div
-          className="h-full"
+    <div className="flex items-center gap-2">
+      <span
+        className="font-display text-[9px] uppercase tracking-[0.25em] shrink-0"
+        style={{ color: current.accent }}
+      >
+        {current.name}
+      </span>
+
+      <div className="relative flex-1 overflow-hidden rounded-full h-px bg-muted">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
           style={{
-            background: next
-              ? `linear-gradient(90deg, ${current.accent}, ${next.accent})`
-              : current.accent,
-            boxShadow: `0 0 12px ${current.accent}`,
+            width: `${progress}%`,
+            background: current.accent,
+            boxShadow: `0 0 6px ${current.accent}`,
           }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
         />
       </div>
+
+      <span className="font-display text-[9px] uppercase tracking-[0.25em] text-muted-foreground shrink-0">
+        {next?.name ?? "—"}
+      </span>
     </div>
   );
 }

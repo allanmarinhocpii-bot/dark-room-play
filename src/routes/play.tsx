@@ -11,7 +11,7 @@ import {
   type PropId,
   type IntensityRank,
 } from "@/data/challenges";
-import { ChallengeCard, type ExitDirection } from "@/components/ChallengeCard";
+import { ChallengeCard, type CardAnimation } from "@/components/ChallengeCard";
 import { JokerCard } from "@/components/JokerCard";
 import { TwistCard } from "@/components/TwistCard";
 import { TensionCard } from "@/components/TensionCard";
@@ -73,7 +73,7 @@ function PlayPage() {
 
   const [card, setCard] = useState<DrawResult | null>(null);
   const [cardId, setCardId] = useState(0);
-  const [exitDir, setExitDir] = useState<ExitDirection>("none");
+  const [cardAnim, setCardAnim] = useState<CardAnimation>("card-flip-in");
   const [levelUpTo, setLevelUpTo] = useState<IntensityRank | null>(null);
   const [burst, setBurst] = useState<number | null>(null);
   const [showRitual, setShowRitual] = useState(false);
@@ -125,17 +125,26 @@ function PlayPage() {
     return c;
   };
 
-  const advanceTo = (c: DrawResult | null) => {
+  const advanceTo = (c: DrawResult | null, anim: CardAnimation = "card-flip-in") => {
     setCard(c);
     setCardId((i) => i + 1);
-    setExitDir("none");
+    setCardAnim(anim);
     setLoadingNext(false);
   };
 
-  const loadNext = async () => {
+  const loadNext = async (anim: CardAnimation = "card-flip-in") => {
     setLoadingNext(true);
     const next = await drawNext();
-    advanceTo(next);
+    advanceTo(next, anim);
+  };
+
+  const trocarCarta = async (motivo: "concluido" | "pulou") => {
+    setCardAnim(motivo === "concluido" ? "card-exit-up" : "card-exit-left");
+    await new Promise((r) => setTimeout(r, 250));
+    setCard(null);
+    setLoadingNext(true);
+    const next = await drawNext();
+    advanceTo(next, "card-flip-in");
   };
 
   // Hydration + initial setup
@@ -155,12 +164,10 @@ function PlayPage() {
 
   const handleSkip = () => {
     recordSkip();
-    setExitDir("left");
-    setCard(null);
-    setTimeout(() => void loadNext(), 50);
+    void trocarCarta("pulou");
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!card) return;
     let pts = 10;
     if (card.kind === "twist") pts = 20;
@@ -176,18 +183,18 @@ function PlayPage() {
     setTimeout(() => setBurst(null), 1200);
 
     const { leveledUp, newLevel } = awardPoints(pts);
-    setExitDir("up");
     if (leveledUp) {
-      setTimeout(() => setLevelUpTo(newLevel), 250);
-    } else {
+      setCardAnim("card-exit-up");
+      await new Promise((r) => setTimeout(r, 250));
       setCard(null);
-      setTimeout(() => void loadNext(), 280);
+      setLevelUpTo(newLevel);
+    } else {
+      void trocarCarta("concluido");
     }
   };
 
   const dismissLevelUp = () => {
     setLevelUpTo(null);
-    setCard(null);
     void loadNext();
   };
 
@@ -268,43 +275,40 @@ function PlayPage() {
           </div>
         )}
 
-        <AnimatePresence mode="wait">
-          {card?.kind === "joker" && (
-            <JokerCard key={cardId} cardKey={String(cardId)} ativoNome={card.ativo.nome} />
-          )}
-          {card?.kind === "twist" && (
-            <TwistCard
-              key={cardId}
-              cardKey={String(cardId)}
-              text={card.text}
-              ativoNome={card.ativo.nome}
-              passivoNome={card.passivo.nome}
-            />
-          )}
-          {card?.kind === "tension" && (
-            <TensionCard
-              key={cardId}
-              cardKey={String(cardId)}
-              text={card.text}
-              ativoNome={card.ativo.nome}
-              passivoNome={card.passivo.nome}
-            />
-          )}
-          {card?.kind === "normal" && (
-            <ChallengeCard
-              key={cardId}
-              cardKey={String(cardId)}
-              text={card.text}
-              categories={card.categories}
-              durationSeconds={card.durationSeconds}
-              level={card.level}
-              ativoNome={card.ativo.nome}
-              passivoNome={card.passivo.nome}
-              propHint={card.propHint}
-              exitDir={exitDir}
-            />
-          )}
-        </AnimatePresence>
+        {card?.kind === "joker" && (
+          <JokerCard key={cardId} animation={cardAnim} ativoNome={card.ativo.nome} />
+        )}
+        {card?.kind === "twist" && (
+          <TwistCard
+            key={cardId}
+            animation={cardAnim}
+            text={card.text}
+            ativoNome={card.ativo.nome}
+            passivoNome={card.passivo.nome}
+          />
+        )}
+        {card?.kind === "tension" && (
+          <TensionCard
+            key={cardId}
+            animation={cardAnim}
+            text={card.text}
+            ativoNome={card.ativo.nome}
+            passivoNome={card.passivo.nome}
+          />
+        )}
+        {card?.kind === "normal" && (
+          <ChallengeCard
+            key={cardId}
+            animation={cardAnim}
+            text={card.text}
+            categories={card.categories}
+            durationSeconds={card.durationSeconds}
+            level={card.level}
+            ativoNome={card.ativo.nome}
+            passivoNome={card.passivo.nome}
+            propHint={card.propHint}
+          />
+        )}
 
         {card && !loadingNext && (
           <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-3">
