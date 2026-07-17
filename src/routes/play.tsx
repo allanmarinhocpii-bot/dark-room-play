@@ -125,17 +125,26 @@ function PlayPage() {
     return c;
   };
 
-  const advanceTo = (c: DrawResult | null) => {
+  const advanceTo = (c: DrawResult | null, anim: CardAnimation = "card-flip-in") => {
     setCard(c);
     setCardId((i) => i + 1);
-    setExitDir("none");
+    setCardAnim(anim);
     setLoadingNext(false);
   };
 
-  const loadNext = async () => {
+  const loadNext = async (anim: CardAnimation = "card-flip-in") => {
     setLoadingNext(true);
     const next = await drawNext();
-    advanceTo(next);
+    advanceTo(next, anim);
+  };
+
+  const trocarCarta = async (motivo: "concluido" | "pulou") => {
+    setCardAnim(motivo === "concluido" ? "card-exit-up" : "card-exit-left");
+    await new Promise((r) => setTimeout(r, 250));
+    setCard(null);
+    setLoadingNext(true);
+    const next = await drawNext();
+    advanceTo(next, "card-flip-in");
   };
 
   // Hydration + initial setup
@@ -155,12 +164,10 @@ function PlayPage() {
 
   const handleSkip = () => {
     recordSkip();
-    setExitDir("left");
-    setCard(null);
-    setTimeout(() => void loadNext(), 50);
+    void trocarCarta("pulou");
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!card) return;
     let pts = 10;
     if (card.kind === "twist") pts = 20;
@@ -176,18 +183,18 @@ function PlayPage() {
     setTimeout(() => setBurst(null), 1200);
 
     const { leveledUp, newLevel } = awardPoints(pts);
-    setExitDir("up");
     if (leveledUp) {
-      setTimeout(() => setLevelUpTo(newLevel), 250);
-    } else {
+      setCardAnim("card-exit-up");
+      await new Promise((r) => setTimeout(r, 250));
       setCard(null);
-      setTimeout(() => void loadNext(), 280);
+      setLevelUpTo(newLevel);
+    } else {
+      void trocarCarta("concluido");
     }
   };
 
   const dismissLevelUp = () => {
     setLevelUpTo(null);
-    setCard(null);
     void loadNext();
   };
 
