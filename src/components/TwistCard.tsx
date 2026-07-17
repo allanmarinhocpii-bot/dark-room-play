@@ -1,24 +1,19 @@
-import { motion } from "framer-motion";
+import type { CardAnimation } from "./ChallengeCard";
 
 export function TwistCard({
   text,
   ativoNome,
   passivoNome,
-  cardKey,
+  animation,
 }: {
   text: string;
   ativoNome: string;
   passivoNome: string;
-  cardKey: string;
+  animation?: CardAnimation;
 }) {
   return (
-    <motion.div
-      key={cardKey}
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.92 }}
-      transition={{ duration: 0.4 }}
-      className="twist-pulse relative w-full max-w-md rounded-2xl border-2 bg-card p-8"
+    <div
+      className={`twist-pulse relative w-full max-w-md rounded-2xl border-2 bg-card p-8 ${animation ?? "card-flip-in"}`}
       style={{ borderColor: "#F97316" }}
     >
       <div className="flex items-center justify-between">
@@ -36,6 +31,6 @@ export function TwistCard({
         Agora {ativoNome} comanda · {passivoNome} recebe
       </p>
       <p className="mt-6 text-[18px] leading-relaxed text-foreground">{text}</p>
-    </motion.div>
+    </div>
   );
 }
