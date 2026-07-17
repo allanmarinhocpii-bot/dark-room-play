@@ -73,7 +73,7 @@ function PlayPage() {
 
   const [card, setCard] = useState<DrawResult | null>(null);
   const [cardId, setCardId] = useState(0);
-  const [exitDir, setExitDir] = useState<ExitDirection>("none");
+  const [cardAnim, setCardAnim] = useState<CardAnimation>("card-flip-in");
   const [levelUpTo, setLevelUpTo] = useState<IntensityRank | null>(null);
   const [burst, setBurst] = useState<number | null>(null);
   const [showRitual, setShowRitual] = useState(false);
