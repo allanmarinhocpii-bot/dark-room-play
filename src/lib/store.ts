@@ -169,6 +169,9 @@ export const useSessionStore = create<SessionState>()(
       recordSkip: () =>
         set((s) => ({ stats: { ...s.stats, skips: s.stats.skips + 1 } })),
 
+      recordTwist: () =>
+        set((s) => ({ stats: { ...s.stats, twists: s.stats.twists + 1 } })),
+
       endSession: (reason) =>
         set((s) => ({
           stats: { ...s.stats, endedAt: Date.now(), endReason: reason },
