@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { motion } from "framer-motion";
 import { useSessionStore } from "@/lib/store";
 
 export const Route = createFileRoute("/aftercare")({
@@ -17,61 +16,51 @@ function AftercarePage() {
   const reason = useSessionStore((s) => s.stats.endReason);
   const isSafe = reason === "safeword";
 
+  const itensSafe = [
+    "Água primeiro.",
+    "Cobertor se precisar.",
+    "Fiquem juntos por pelo menos 10 minutos.",
+    "Sem análise agora. Só presença.",
+  ];
+  const itensNormal = [
+    "Água.",
+    "Contato físico confortável.",
+    "Falem o que foi bom.",
+  ];
+  const itens = isSafe ? itensSafe : itensNormal;
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-      className="min-h-screen px-6 py-20"
-      style={{ background: "#F5F0EB", color: "#1a1a1a" }}
+    <div
+      className="min-h-screen px-8 py-16"
+      style={{ background: "#F5F0EB", animation: "fadeIn 0.8s ease-out" }}
     >
-      <div className="mx-auto max-w-md text-center">
-        <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: "rgba(0,0,0,0.06)" }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
+      <div className="mx-auto max-w-md">
+        <h2 className="text-2xl font-light text-gray-800">
+          {isSafe ? "Pausa." : "Sessão encerrada."}
+        </h2>
+        <p className="mt-4 text-gray-600">
+          {isSafe ? "Tudo bem. Vocês estão seguros." : "Cuidem um do outro agora."}
+        </p>
+        <div className="mt-8 space-y-4">
+          {itens.map((item) => (
+            <p key={item} className="flex gap-3 text-gray-700">
+              <span className="text-gray-400">→</span>
+              {item}
+            </p>
+          ))}
         </div>
-
-        {isSafe ? (
-          <>
-            <h1 className="text-3xl font-medium" style={{ color: "#1a1a1a" }}>Pausa.</h1>
-            <p className="mt-4 text-base" style={{ color: "#444" }}>
-              Tudo bem. Vocês estão seguros.
-            </p>
-            <ul className="mt-10 space-y-4 text-left text-base" style={{ color: "#333" }}>
-              <li>→ Água primeiro.</li>
-              <li>→ Cobertor se precisar.</li>
-              <li>→ Fiquem juntos por pelo menos 10 minutos.</li>
-              <li>→ Sem análise agora. Só presença.</li>
-            </ul>
-            <p className="mt-8 text-sm" style={{ color: "#555" }}>
-              Quando estiverem prontos, podem conversar sobre o que aconteceu.
-            </p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-3xl font-medium" style={{ color: "#1a1a1a" }}>
-              Sessão encerrada.
-            </h1>
-            <p className="mt-4 text-base" style={{ color: "#444" }}>
-              Cuidem um do outro agora.
-            </p>
-            <ul className="mt-10 space-y-4 text-left text-base" style={{ color: "#333" }}>
-              <li>→ Água.</li>
-              <li>→ Contato físico confortável.</li>
-              <li>→ Falem o que foi bom.</li>
-            </ul>
-          </>
+        {isSafe && (
+          <p className="mt-8 text-sm italic text-gray-500">
+            Quando estiverem prontos, podem conversar sobre o que aconteceu.
+          </p>
         )}
-
         <button
           onClick={() => navigate({ to: "/historia" })}
-          className="mt-14 w-full rounded-md py-4 font-display text-xs uppercase tracking-[0.3em]"
-          style={{ background: "#1a1a1a", color: "#fff" }}
+          className="mt-16 w-full rounded-md bg-gray-900 py-4 font-display text-xs uppercase tracking-[0.3em] text-white"
         >
           Estamos bem
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
