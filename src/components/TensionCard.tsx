@@ -2,26 +2,22 @@ import type { CardAnimation } from "./ChallengeCard";
 
 export function TensionCard({
   text,
-  ativoNome,
-  passivoNome,
   animation,
 }: {
   text: string;
-  ativoNome: string;
-  passivoNome: string;
+  ativoNome?: string;
+  passivoNome?: string;
   animation?: CardAnimation;
 }) {
   return (
     <div
-      className={`relative w-full max-w-md rounded-2xl border border-border/70 bg-card/60 p-8 backdrop-blur ${animation ?? "card-flip-in"}`}
+      className={`relative w-full max-w-md rounded-xl border bg-card p-6 ${animation ?? "card-flip-in"}`}
+      style={{ borderColor: "#2a2a2a" }}
     >
-      <p className="font-display text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
-        Respiro · Tensão Psicológica
-      </p>
-      <p className="mt-2 font-display text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">
-        {ativoNome} · {passivoNome}
-      </p>
-      <p className="mt-6 text-[18px] leading-relaxed text-foreground/90">{text}</p>
+      <span className="mb-4 block font-display text-[9px] uppercase tracking-[0.3em] text-[#4B5563]">
+        Pausa
+      </span>
+      <p className="text-[17px] font-light leading-[1.75] text-foreground">{text}</p>
     </div>
   );
 }
