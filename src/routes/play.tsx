@@ -332,6 +332,7 @@ function PlayPage() {
             </button>
           </div>
         )}
+      </main>
 
       <SafeWordButton />
 
