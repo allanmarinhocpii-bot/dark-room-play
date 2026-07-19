@@ -20,6 +20,7 @@ export interface SessionStats {
   roundsCompleted: number;
   skips: number;
   cardsDrawn: number;
+  twists: number;
   categoryCounts: Partial<Record<CategoryKey, number>>;
   maxLevelPlayed: IntensityRank;
   passiveLoad: { j1: number; j2: number }; // soma de níveis recebidos como passivo
@@ -32,6 +33,7 @@ const emptyStats: SessionStats = {
   roundsCompleted: 0,
   skips: 0,
   cardsDrawn: 0,
+  twists: 0,
   categoryCounts: {},
   maxLevelPlayed: 1,
   passiveLoad: { j1: 0, j2: 0 },
@@ -70,6 +72,7 @@ interface SessionState {
   recordDraw: (cat: CategoryKey | null, lvl: IntensityRank | null) => void;
   recordComplete: (passiveIs: "j1" | "j2", lvl: IntensityRank) => void;
   recordSkip: () => void;
+  recordTwist: () => void;
   endSession: (reason: "normal" | "safeword") => void;
   resetGame: () => void;
   setHasHydrated: (v: boolean) => void;
@@ -165,6 +168,9 @@ export const useSessionStore = create<SessionState>()(
 
       recordSkip: () =>
         set((s) => ({ stats: { ...s.stats, skips: s.stats.skips + 1 } })),
+
+      recordTwist: () =>
+        set((s) => ({ stats: { ...s.stats, twists: s.stats.twists + 1 } })),
 
       endSession: (reason) =>
         set((s) => ({
