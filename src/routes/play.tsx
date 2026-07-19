@@ -276,7 +276,13 @@ function PlayPage() {
         )}
 
         {card?.kind === "joker" && (
-          <JokerCard key={cardId} animation={cardAnim} ativoNome={card.ativo.nome} />
+          <JokerCard
+            key={cardId}
+            animation={cardAnim}
+            ativoNome={card.ativo.nome}
+            onSkip={handleSkip}
+            onComplete={handleComplete}
+          />
         )}
         {card?.kind === "twist" && (
           <TwistCard
