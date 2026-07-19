@@ -177,6 +177,7 @@ function PlayPage() {
       if (card.durationSeconds) pts = 15;
       if (card.categories.length > 1) pts += 5;
     }
+    if (card.kind === "twist") recordTwist();
     if (card.kind !== "joker" && card.kind !== "tension") {
       recordComplete(card.passivoIs, card.level);
     }
