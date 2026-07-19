@@ -212,12 +212,13 @@ function drawTwist(input: DrawInput): DrawResult {
 // Decide deterministicamente o próximo tipo de carta
 export function decideKind(input: DrawInput): DrawKind {
   if (input.forcedTwist) return "twist";
-  // Virada: a cada 5 rodadas completas (e ainda não servida)
-  if (input.roundsCompleted > 0 && input.roundsCompleted % 5 === 0) return "twist";
-  // Tensão psicológica: a cada 4 rodadas
-  if (input.roundsCompleted > 0 && input.roundsCompleted % 4 === 0) return "tension";
-  // Coringa: ~1 a cada 15 cartas (probabilístico)
-  if (Math.random() < 1 / 15) return "joker";
+  const round = input.roundsCompleted;
+  // Coringa: exatamente a cada 15 rodadas concluídas (prioridade máxima)
+  if (round > 0 && round % 15 === 0) return "joker";
+  // Virada: a cada 5 rodadas completas
+  if (round > 0 && round % 5 === 0) return "twist";
+  // Tensão psicológica: a cada 4 rodadas (não colidindo)
+  if (round > 0 && round % 4 === 0) return "tension";
   return "normal";
 }
 
