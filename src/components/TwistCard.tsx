@@ -1,36 +1,38 @@
 import type { CardAnimation } from "./ChallengeCard";
 
 export function TwistCard({
-  text,
   ativoNome,
   passivoNome,
   animation,
 }: {
-  text: string;
+  text?: string;
   ativoNome: string;
   passivoNome: string;
   animation?: CardAnimation;
 }) {
   return (
     <div
-      className={`twist-pulse relative w-full max-w-md rounded-2xl border-2 bg-card p-8 ${animation ?? "card-flip-in"}`}
-      style={{ borderColor: "#F97316" }}
+      className={`relative w-full max-w-md rounded-xl border-2 bg-card p-6 ${animation ?? "card-flip-in"}`}
+      style={{
+        borderColor: "#F97316",
+        animation: "borderPulse 1s ease-in-out infinite",
+      }}
     >
-      <div className="flex items-center justify-between">
-        <span className="font-display text-[10px] uppercase tracking-[0.3em]" style={{ color: "#F97316" }}>
-          ↔ Virada
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-[#F97316]">↔</span>
+        <span className="font-display text-[10px] uppercase tracking-[0.3em] text-[#F97316]">
+          Virada
         </span>
-        <span className="font-display text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+        <span className="ml-auto font-display text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
           +20 pts
         </span>
       </div>
-      <p
-        className="mt-4 font-display text-[10px] uppercase tracking-[0.3em]"
-        style={{ color: "#F97316" }}
-      >
-        Agora {ativoNome} comanda · {passivoNome} recebe
+      <p className="text-lg font-light leading-relaxed text-foreground">
+        Os papéis invertem por essa rodada.
       </p>
-      <p className="mt-6 text-[18px] leading-relaxed text-foreground">{text}</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {passivoNome} comanda · {ativoNome} recebe
+      </p>
     </div>
   );
 }
