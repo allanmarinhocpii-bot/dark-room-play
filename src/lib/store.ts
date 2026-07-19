@@ -72,6 +72,7 @@ interface SessionState {
   recordDraw: (cat: CategoryKey | null, lvl: IntensityRank | null) => void;
   recordComplete: (passiveIs: "j1" | "j2", lvl: IntensityRank) => void;
   recordSkip: () => void;
+  recordTwist: () => void;
   endSession: (reason: "normal" | "safeword") => void;
   resetGame: () => void;
   setHasHydrated: (v: boolean) => void;
