@@ -51,6 +51,7 @@ function PlayPage() {
     recordDraw,
     recordComplete,
     recordSkip,
+    recordTwist,
     endSession,
   } = useSessionStore();
 
