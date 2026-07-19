@@ -316,31 +316,22 @@ function PlayPage() {
           />
         )}
 
-        {card && !loadingNext && (
+        {card && !loadingNext && card.kind !== "joker" && (
           <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-3">
             <button
               onClick={handleSkip}
-              className={`rounded-md border py-4 font-display text-xs uppercase tracking-[0.25em] ${
-                card.kind === "joker"
-                  ? "border-black bg-white text-black"
-                  : "border-border bg-card text-muted-foreground hover:text-foreground"
-              }`}
+              className="rounded-md border border-border bg-card py-4 font-display text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground"
             >
               Pular
             </button>
             <button
               onClick={handleComplete}
-              className={`rounded-md py-4 font-display text-xs uppercase tracking-[0.25em] ${
-                card.kind === "joker"
-                  ? "bg-black text-white"
-                  : "bg-foreground text-background"
-              }`}
+              className="rounded-md bg-foreground py-4 font-display text-xs uppercase tracking-[0.25em] text-background"
             >
               Concluído
             </button>
           </div>
         )}
-      </main>
 
       <SafeWordButton />
 
