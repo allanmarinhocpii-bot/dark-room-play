@@ -157,6 +157,16 @@
     100% { transform: translateY(-20px); opacity: 0; }
   }
 
+  @keyframes borderPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(249, 115, 22, 0.4); }
+    50%      { box-shadow: 0 0 24px rgba(249, 115, 22, 0.9); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
   .card-flip-in   { animation: cardFlipIn   0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
   .card-exit-up   { animation: cardExitUp   0.25s ease-in forwards; }
   .card-exit-left { animation: cardExitLeft 0.25s ease-in forwards; }

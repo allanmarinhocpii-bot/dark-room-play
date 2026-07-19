@@ -244,20 +244,22 @@ export const CATEGORIAS: Record<CategoryKey, Categoria> = {
 export const TENSAO_PSICOLOGICA = {
   nome: "Tensão Psicológica",
   acoes: [
-    "Olhem nos olhos um do outro por 60 segundos sem dizer nada.",
-    "{ativo} sussurra no ouvido de {passivo} o que pretende fazer a seguir — sem tocar.",
-    "{ativo} aproxima os lábios dos lábios de {passivo} sem encostar, por 30 segundos.",
-    "{passivo} descreve em voz alta o que está sentindo agora. {ativo} apenas escuta.",
-    "Mãos paradas. Apenas respiração compartilhada por 1 minuto.",
-    "{ativo} percorre o corpo de {passivo} com o olhar — proibido tocar por 90 segundos.",
-    "{passivo} diz uma frase de entrega à escolha {dele_dela}. {ativo} responde apenas com o olhar.",
+    "Fica parado. {ativo} decide quando começa. Pode demorar.",
+    "Olha nos olhos de {passivo} e não faz nada. Só espera.",
+    "Chega perto de {passivo} sem tocar. Fica assim por um minuto.",
+    "Descreve em detalhes o que vai acontecer. Depois espera três minutos para começar.",
+    "Circula em volta de {passivo} sem tocar. Sabe que você vai. Não sabe quando.",
+    "Fica de pé na frente de {passivo} sentado. Não fala, não toca. Só ocupa o espaço.",
+    "Conta até dez em voz alta, devagar. {passivo} não sabe o que acontece no dez.",
+    "Sussurra o que vai fazer no ouvido de {passivo}. Depois não faz. Ainda.",
+    "Segura o rosto de {passivo} com as duas mãos e olha fundo. Não fala. Espera.",
+    "Você sabe o que {passivo} quer. Faz tudo menos isso. Por enquanto.",
   ],
 };
 
 // Carta de Virada — força inversão de papéis
 export const VIRADA = {
-  texto:
-    "Os papéis se invertem por essa rodada. Agora {ativo} recebe e {passivo} comanda. Próxima carta, tudo volta ao normal.",
+  texto: "Os papéis invertem por essa rodada.",
 };
 
 // Mapeamento de props → texto adicional injetado quando ativo + compatível
