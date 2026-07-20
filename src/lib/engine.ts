@@ -88,22 +88,47 @@ function buildPropHint(
   return undefined;
 }
 
+function catHasActionAt(cat: CategoryKey, level: IntensityRank): boolean {
+  const data = CATEGORIAS[cat];
+  const ranks: IntensityRank[] = [1, 2, 3, 4, 5];
+  for (const r of ranks) {
+    if (r > level) continue;
+    if (r < data.rankBase) continue;
+    const list = data.acoes[r];
+    if (list && list.length > 0) return true;
+  }
+  // fallback: qualquer ação existente
+  for (const r of ranks) {
+    const list = data.acoes[r];
+    if (list && list.length > 0) return true;
+  }
+  return false;
+}
+
 function drawNormal(input: DrawInput): DrawResult | null {
   const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input);
-  const allowedCats = input.activeCategories.filter((c) => CATEGORIAS[c].rankBase <= input.level);
-  const pool = allowedCats.length > 0 ? allowedCats : input.activeCategories;
-  if (pool.length === 0) return null;
+  // Categorias que efetivamente têm ação disponível no nível atual
+  const usable = input.activeCategories.filter((c) => catHasActionAt(c, input.level));
+  if (usable.length === 0) return null;
 
   const pickFromCat = (cat: CategoryKey) => {
     const data = CATEGORIAS[cat];
-    // Coleta ações nos níveis ≤ level e ≥ rankBase
     const ranks: IntensityRank[] = [1, 2, 3, 4, 5];
     const available: Array<{ text: string; lvl: IntensityRank }> = [];
     for (const r of ranks) {
       if (r > input.level) continue;
+      if (r < data.rankBase) continue;
       const list = data.acoes[r];
       if (!list) continue;
       list.forEach((t) => available.push({ text: t, lvl: r }));
+    }
+    // fallback total: usa qualquer ação da cat (garante que não trave)
+    if (available.length === 0) {
+      for (const r of ranks) {
+        const list = data.acoes[r];
+        if (!list) continue;
+        list.forEach((t) => available.push({ text: t, lvl: r }));
+      }
     }
     if (available.length === 0) return null;
     const chosen = pick(available);
@@ -115,14 +140,34 @@ function drawNormal(input: DrawInput): DrawResult | null {
     return { text, lvl: chosen.lvl, cat };
   };
 
-  if (input.mode === "combined" && pool.length >= 2) {
-    const a = pick(pool);
-    let b = pick(pool);
+  if (input.mode === "combined" && usable.length >= 2) {
+    const a = pick(usable);
+    let b = pick(usable);
     let safety = 0;
-    while (b === a && safety++ < 10) b = pick(pool);
+    while (b === a && safety++ < 10) b = pick(usable);
     const d1 = pickFromCat(a);
     const d2 = pickFromCat(b);
-    if (!d1 || !d2) return drawNormal({ ...input, mode: "standard" });
+    if (!d1 || !d2) {
+      // cai pra modo padrão em vez de recursão infinita
+      const cat = pick(usable);
+      const drawn = pickFromCat(cat);
+      if (!drawn) return null;
+      const ctx = { ativo, passivo };
+      const text = interpolate(drawn.text, ctx);
+      const hint = buildPropHint(cat, drawn.text, input.activeProps);
+      return {
+        kind: "normal",
+        text,
+        ativo,
+        passivo,
+        ativoIs,
+        passivoIs,
+        categories: [cat],
+        level: drawn.lvl,
+        durationSeconds: extractDuration(text),
+        propHint: hint ? interpolate(hint, ctx) : undefined,
+      };
+    }
     const ctx = { ativo, passivo };
     const t1 = interpolate(d1.text, ctx);
     const t2 = interpolate(d2.text, ctx);
@@ -145,7 +190,7 @@ function drawNormal(input: DrawInput): DrawResult | null {
     };
   }
 
-  const cat = pick(pool);
+  const cat = pick(usable);
   const drawn = pickFromCat(cat);
   if (!drawn) return null;
   const ctx = { ativo, passivo };
@@ -164,6 +209,7 @@ function drawNormal(input: DrawInput): DrawResult | null {
     propHint: hint ? interpolate(hint, ctx) : undefined,
   };
 }
+
 
 function drawTension(input: DrawInput): DrawResult {
   const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input);
