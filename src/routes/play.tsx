@@ -318,6 +318,25 @@ function PlayPage() {
           />
         )}
 
+        {!card && !loadingNext && initialized && !showRitual && (
+          <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center">
+            <p className="font-display text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              Sem cartas disponíveis
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Nenhuma categoria ativa tem desafio para este nível. Encerre a sessão ou volte pro
+              setup e ative mais categorias.
+            </p>
+            <button
+              onClick={() => void loadNext()}
+              className="mt-2 rounded-md border border-border px-4 py-2 font-display text-[10px] uppercase tracking-[0.25em]"
+            >
+              Tentar de novo
+            </button>
+          </div>
+        )}
+
+
         {card && !loadingNext && card.kind !== "joker" && (
           <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-3">
             <button
