@@ -255,16 +255,19 @@ function drawTwist(input: DrawInput): DrawResult {
   };
 }
 
-// Decide deterministicamente o próximo tipo de carta
+// Decide deterministicamente o próximo tipo de carta.
+// Usa cardsDrawn (incrementa em TODA carta, inclusive tensão/coringa)
+// pra evitar que cartas que não marcam "roundsCompleted" travem o ciclo.
 export function decideKind(input: DrawInput): DrawKind {
   if (input.forcedTwist) return "twist";
-  const round = input.roundsCompleted;
-  // Coringa: exatamente a cada 15 rodadas concluídas (prioridade máxima)
-  if (round > 0 && round % 15 === 0) return "joker";
-  // Virada: a cada 5 rodadas completas
-  if (round > 0 && round % 5 === 0) return "twist";
-  // Tensão psicológica: a cada 4 rodadas (não colidindo)
-  if (round > 0 && round % 4 === 0) return "tension";
+  // Turno da carta que está sendo sorteada agora (1-indexed).
+  const turn = input.cardsDrawn + 1;
+  // Coringa: a cada 15 cartas (prioridade máxima)
+  if (turn % 15 === 0) return "joker";
+  // Virada: a cada 5 cartas
+  if (turn % 5 === 0) return "twist";
+  // Tensão psicológica: a cada 4 cartas (não colide com múltiplos de 5/15)
+  if (turn % 4 === 0) return "tension";
   return "normal";
 }
 
