@@ -82,8 +82,11 @@ function PlayPage() {
   const [loadingNext, setLoadingNext] = useState(false);
 
   const lastTextsRef = useRef<string[]>([]);
+  const nextCardBufferRef = useRef<DrawResult | null>(null);
+  const prefetchingRef = useRef(false);
 
   const drawNext = async (): Promise<DrawResult | null> => {
+    const state = useSessionStore.getState();
     const c = draw({
       jogador1,
       jogador2,
@@ -91,12 +94,17 @@ function PlayPage() {
       activeCategories: activeCats,
       mode,
       activeProps,
-      level: useSessionStore.getState().level,
-      roundsCompleted: useSessionStore.getState().stats.roundsCompleted,
-      cardsDrawn: useSessionStore.getState().stats.cardsDrawn,
+      level: state.level,
+      roundsCompleted: state.stats.roundsCompleted,
+      cardsDrawn: state.stats.cardsDrawn,
+      recentTexts: state.stats.drawnHistory,
     });
     if (!c) return null;
-    recordDraw(c.categories[0] ?? null, c.kind === "normal" ? c.level : null);
+    recordDraw(
+      c.categories[0] ?? null,
+      c.kind === "normal" ? c.level : null,
+      c.baseText,
+    );
 
     if (c.kind === "normal") {
       const catKey = c.categories[0];
@@ -119,11 +127,23 @@ function PlayPage() {
         c.durationSeconds = result.segundos;
       }
       if (result.prop_usado) {
-        c.propHint = undefined; // o prop já está embutido no texto
+        c.propHint = undefined;
       }
       lastTextsRef.current = [...lastTextsRef.current, result.texto].slice(-5);
     }
     return c;
+  };
+
+  const prefetchNext = () => {
+    if (prefetchingRef.current || nextCardBufferRef.current) return;
+    prefetchingRef.current = true;
+    void drawNext()
+      .then((next) => {
+        nextCardBufferRef.current = next;
+      })
+      .finally(() => {
+        prefetchingRef.current = false;
+      });
   };
 
   const advanceTo = (c: DrawResult | null, anim: CardAnimation = "card-flip-in") => {
@@ -131,9 +151,20 @@ function PlayPage() {
     setCardId((i) => i + 1);
     setCardAnim(anim);
     setLoadingNext(false);
+    if (c) {
+      // dispara prefetch da próxima em background
+      setTimeout(prefetchNext, 250);
+    }
   };
 
   const loadNext = async (anim: CardAnimation = "card-flip-in") => {
+    // Usa buffer se disponível
+    if (nextCardBufferRef.current) {
+      const buffered = nextCardBufferRef.current;
+      nextCardBufferRef.current = null;
+      advanceTo(buffered, anim);
+      return;
+    }
     setLoadingNext(true);
     const next = await drawNext();
     advanceTo(next, anim);
@@ -143,10 +174,17 @@ function PlayPage() {
     setCardAnim(motivo === "concluido" ? "card-exit-up" : "card-exit-left");
     await new Promise((r) => setTimeout(r, 250));
     setCard(null);
+    if (nextCardBufferRef.current) {
+      const buffered = nextCardBufferRef.current;
+      nextCardBufferRef.current = null;
+      advanceTo(buffered, "card-flip-in");
+      return;
+    }
     setLoadingNext(true);
     const next = await drawNext();
     advanceTo(next, "card-flip-in");
   };
+
 
   // Hydration + initial setup
   useEffect(() => {
