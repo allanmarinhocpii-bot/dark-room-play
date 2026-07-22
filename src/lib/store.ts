@@ -73,7 +73,7 @@ interface SessionState {
   setRitual: (v: boolean) => void;
   // engine
   awardPoints: (pts: number) => { leveledUp: boolean; newLevel: IntensityRank };
-  recordDraw: (cat: CategoryKey | null, lvl: IntensityRank | null) => void;
+  recordDraw: (cat: CategoryKey | null, lvl: IntensityRank | null, baseText?: string) => void;
   recordComplete: (passiveIs: "j1" | "j2", lvl: IntensityRank) => void;
   recordSkip: () => void;
   recordTwist: () => void;
