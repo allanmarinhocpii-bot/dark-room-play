@@ -213,6 +213,28 @@ function SetupPage() {
 
         {/* 03 · PROPS */}
         <Section title="03 · Props">
+          <div className="mb-3 flex gap-2">
+            <button
+              onClick={() => {
+                PROPS.forEach((p) => {
+                  if (!props[p.id as PropId]) toggleProp(p.id as PropId);
+                });
+              }}
+              className="flex-1 rounded-md border border-border px-3 py-2 font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
+            >
+              Marcar todos
+            </button>
+            <button
+              onClick={() => {
+                PROPS.forEach((p) => {
+                  if (props[p.id as PropId]) toggleProp(p.id as PropId);
+                });
+              }}
+              className="flex-1 rounded-md border border-border px-3 py-2 font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
+            >
+              Desmarcar todos
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {PROPS.map((p) => {
               const active = props[p.id as PropId];
@@ -236,6 +258,7 @@ function SetupPage() {
             Props adicionam camadas extras quando a carta sorteada for compatível.
           </p>
         </Section>
+
 
         {/* 04 · MODO */}
         <Section title="04 · Modo de Jogo">
