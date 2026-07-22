@@ -25,7 +25,10 @@ export interface SessionStats {
   maxLevelPlayed: IntensityRank;
   passiveLoad: { j1: number; j2: number }; // soma de níveis recebidos como passivo
   endReason: "normal" | "safeword" | null;
+  drawnHistory: string[]; // últimos baseTexts sorteados (máx. 10)
 }
+
+const HISTORY_LIMIT = 10;
 
 const emptyStats: SessionStats = {
   startedAt: null,
@@ -38,6 +41,7 @@ const emptyStats: SessionStats = {
   maxLevelPlayed: 1,
   passiveLoad: { j1: 0, j2: 0 },
   endReason: null,
+  drawnHistory: [],
 };
 
 interface SessionState {
