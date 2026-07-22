@@ -4,6 +4,8 @@ import type { Genero } from "@/lib/store";
 
 export type { CardGenInput, CardGenResult };
 
+const AI_TIMEOUT_MS = 1500;
+
 function extractDuration(text: string): number | null {
   const min = text.match(/(\d+)\s*minutos?/i);
   if (min) return parseInt(min[1], 10) * 60;
@@ -28,7 +30,12 @@ function fallback(ctx: CardGenInput): CardGenResult {
 
 export async function generateCard(ctx: CardGenInput): Promise<CardGenResult> {
   try {
-    const result = await generateCardFn({ data: ctx });
+    const result = await Promise.race<CardGenResult>([
+      generateCardFn({ data: ctx }),
+      new Promise<CardGenResult>((_, reject) =>
+        setTimeout(() => reject(new Error("ai-timeout")), AI_TIMEOUT_MS),
+      ),
+    ]);
     return result;
   } catch (err) {
     console.warn("[cardGenerator] fallback:", err);

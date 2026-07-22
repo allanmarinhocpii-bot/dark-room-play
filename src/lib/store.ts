@@ -25,7 +25,10 @@ export interface SessionStats {
   maxLevelPlayed: IntensityRank;
   passiveLoad: { j1: number; j2: number }; // soma de níveis recebidos como passivo
   endReason: "normal" | "safeword" | null;
+  drawnHistory: string[]; // últimos baseTexts sorteados (máx. 10)
 }
+
+const HISTORY_LIMIT = 10;
 
 const emptyStats: SessionStats = {
   startedAt: null,
@@ -38,6 +41,7 @@ const emptyStats: SessionStats = {
   maxLevelPlayed: 1,
   passiveLoad: { j1: 0, j2: 0 },
   endReason: null,
+  drawnHistory: [],
 };
 
 interface SessionState {
@@ -69,7 +73,7 @@ interface SessionState {
   setRitual: (v: boolean) => void;
   // engine
   awardPoints: (pts: number) => { leveledUp: boolean; newLevel: IntensityRank };
-  recordDraw: (cat: CategoryKey | null, lvl: IntensityRank | null) => void;
+  recordDraw: (cat: CategoryKey | null, lvl: IntensityRank | null, baseText?: string) => void;
   recordComplete: (passiveIs: "j1" | "j2", lvl: IntensityRank) => void;
   recordSkip: () => void;
   recordTwist: () => void;
@@ -137,10 +141,13 @@ export const useSessionStore = create<SessionState>()(
         return { leveledUp: newLevel > prev, newLevel };
       },
 
-      recordDraw: (cat, lvl) =>
+      recordDraw: (cat, lvl, baseText) =>
         set((s) => {
           const counts = { ...s.stats.categoryCounts };
           if (cat) counts[cat] = (counts[cat] ?? 0) + 1;
+          const history = baseText
+            ? [...s.stats.drawnHistory, baseText].slice(-HISTORY_LIMIT)
+            : s.stats.drawnHistory;
           return {
             stats: {
               ...s.stats,
@@ -149,6 +156,7 @@ export const useSessionStore = create<SessionState>()(
               maxLevelPlayed: (lvl && lvl > s.stats.maxLevelPlayed
                 ? lvl
                 : s.stats.maxLevelPlayed) as IntensityRank,
+              drawnHistory: history,
             },
           };
         }),

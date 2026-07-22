@@ -21,6 +21,7 @@ export interface PlayerLite {
 export interface DrawResult {
   kind: DrawKind;
   text: string;
+  baseText?: string; // texto bruto pré-interpolação (usado p/ dedupe)
   ativo: PlayerLite;
   passivo: PlayerLite;
   ativoIs: "j1" | "j2";
@@ -33,6 +34,13 @@ export interface DrawResult {
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/** Clamp e converte um número em IntensityRank válido (1..5). */
+export function toIntensityRank(val: number): IntensityRank {
+  const rounded = Math.round(val);
+  const clamped = Math.min(5, Math.max(1, rounded));
+  return clamped as IntensityRank;
 }
 
 function extractDuration(text: string): number | undefined {
@@ -54,6 +62,7 @@ interface DrawInput {
   roundsCompleted: number;
   cardsDrawn: number;
   forcedTwist?: boolean;
+  recentTexts?: string[]; // histórico de baseTexts recentes p/ evitar repetição
 }
 
 function resolveRoles(
@@ -79,10 +88,9 @@ function buildPropHint(
   for (const propId of activeProps) {
     const meta = PROPS.find((p) => p.id === propId);
     if (!meta) continue;
-    // só adiciona se a categoria é compatível e o texto NÃO menciona já
     if (!meta.fitCats.includes(cat)) continue;
     const lower = actionText.toLowerCase();
-    if (meta.keywords.some((k) => lower.includes(k))) continue; // já mencionado
+    if (meta.keywords.some((k) => lower.includes(k))) continue;
     return meta.hint;
   }
   return undefined;
@@ -97,7 +105,6 @@ function catHasActionAt(cat: CategoryKey, level: IntensityRank): boolean {
     const list = data.acoes[r];
     if (list && list.length > 0) return true;
   }
-  // fallback: qualquer ação existente
   for (const r of ranks) {
     const list = data.acoes[r];
     if (list && list.length > 0) return true;
@@ -107,9 +114,10 @@ function catHasActionAt(cat: CategoryKey, level: IntensityRank): boolean {
 
 function drawNormal(input: DrawInput): DrawResult | null {
   const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input);
-  // Categorias que efetivamente têm ação disponível no nível atual
   const usable = input.activeCategories.filter((c) => catHasActionAt(c, input.level));
   if (usable.length === 0) return null;
+
+  const recent = new Set(input.recentTexts ?? []);
 
   const pickFromCat = (cat: CategoryKey) => {
     const data = CATEGORIAS[cat];
@@ -122,7 +130,6 @@ function drawNormal(input: DrawInput): DrawResult | null {
       if (!list) continue;
       list.forEach((t) => available.push({ text: t, lvl: r }));
     }
-    // fallback total: usa qualquer ação da cat (garante que não trave)
     if (available.length === 0) {
       for (const r of ranks) {
         const list = data.acoes[r];
@@ -131,13 +138,17 @@ function drawNormal(input: DrawInput): DrawResult | null {
       }
     }
     if (available.length === 0) return null;
-    const chosen = pick(available);
-    let text = chosen.text;
+    // Filtra recentes (se sobrar algo)
+    const filtered = available.filter((a) => !recent.has(a.text));
+    const pool = filtered.length > 0 ? filtered : available;
+    const chosen = pick(pool);
+    const baseText = chosen.text;
+    let text = baseText;
     if (data.locais && data.locais.length > 0) {
       const local = pick(data.locais);
       text = text.replaceAll("{local}", local);
     }
-    return { text, lvl: chosen.lvl, cat };
+    return { text, baseText, lvl: chosen.lvl, cat };
   };
 
   if (input.mode === "combined" && usable.length >= 2) {
@@ -148,7 +159,6 @@ function drawNormal(input: DrawInput): DrawResult | null {
     const d1 = pickFromCat(a);
     const d2 = pickFromCat(b);
     if (!d1 || !d2) {
-      // cai pra modo padrão em vez de recursão infinita
       const cat = pick(usable);
       const drawn = pickFromCat(cat);
       if (!drawn) return null;
@@ -158,6 +168,7 @@ function drawNormal(input: DrawInput): DrawResult | null {
       return {
         kind: "normal",
         text,
+        baseText: drawn.baseText,
         ativo,
         passivo,
         ativoIs,
@@ -175,10 +186,11 @@ function drawNormal(input: DrawInput): DrawResult | null {
     const hint =
       buildPropHint(a, d1.text, input.activeProps) ??
       buildPropHint(b, d2.text, input.activeProps);
-    const lvl = (Math.max(d1.lvl, d2.lvl) as IntensityRank);
+    const lvl = toIntensityRank(Math.max(d1.lvl, d2.lvl));
     return {
       kind: "normal",
       text,
+      baseText: `${d1.baseText}||${d2.baseText}`,
       ativo,
       passivo,
       ativoIs,
@@ -199,12 +211,13 @@ function drawNormal(input: DrawInput): DrawResult | null {
   return {
     kind: "normal",
     text,
+    baseText: drawn.baseText,
     ativo,
     passivo,
     ativoIs,
     passivoIs,
     categories: [cat],
-    level: drawn.lvl,
+    level: toIntensityRank(drawn.lvl),
     durationSeconds: extractDuration(text),
     propHint: hint ? interpolate(hint, ctx) : undefined,
   };
@@ -241,7 +254,6 @@ function drawJoker(input: DrawInput): DrawResult {
 }
 
 function drawTwist(input: DrawInput): DrawResult {
-  // Inverte papéis nessa rodada
   const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input, true);
   return {
     kind: "twist",
@@ -255,18 +267,11 @@ function drawTwist(input: DrawInput): DrawResult {
   };
 }
 
-// Decide deterministicamente o próximo tipo de carta.
-// Usa cardsDrawn (incrementa em TODA carta, inclusive tensão/coringa)
-// pra evitar que cartas que não marcam "roundsCompleted" travem o ciclo.
 export function decideKind(input: DrawInput): DrawKind {
   if (input.forcedTwist) return "twist";
-  // Turno da carta que está sendo sorteada agora (1-indexed).
   const turn = input.cardsDrawn + 1;
-  // Coringa: a cada 15 cartas (prioridade máxima)
   if (turn % 15 === 0) return "joker";
-  // Virada: a cada 5 cartas
   if (turn % 5 === 0) return "twist";
-  // Tensão psicológica: a cada 4 cartas (não colide com múltiplos de 5/15)
   if (turn % 4 === 0) return "tension";
   return "normal";
 }
