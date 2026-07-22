@@ -55,6 +55,21 @@ export function TimerArco({ segundos, cor, resetKey, onComplete }: TimerArcoProp
     setRodando((r) => !r);
   };
 
+  // Atalho: barra de espaço pausa/inicia/reinicia o timer visível
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      e.preventDefault();
+      handleClick();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completo, segundos]);
+
+
   return (
     <div className="mt-6 flex flex-col items-center gap-3">
       <button
