@@ -141,10 +141,13 @@ export const useSessionStore = create<SessionState>()(
         return { leveledUp: newLevel > prev, newLevel };
       },
 
-      recordDraw: (cat, lvl) =>
+      recordDraw: (cat, lvl, baseText) =>
         set((s) => {
           const counts = { ...s.stats.categoryCounts };
           if (cat) counts[cat] = (counts[cat] ?? 0) + 1;
+          const history = baseText
+            ? [...s.stats.drawnHistory, baseText].slice(-HISTORY_LIMIT)
+            : s.stats.drawnHistory;
           return {
             stats: {
               ...s.stats,
@@ -153,6 +156,7 @@ export const useSessionStore = create<SessionState>()(
               maxLevelPlayed: (lvl && lvl > s.stats.maxLevelPlayed
                 ? lvl
                 : s.stats.maxLevelPlayed) as IntensityRank,
+              drawnHistory: history,
             },
           };
         }),
