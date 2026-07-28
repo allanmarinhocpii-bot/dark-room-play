@@ -4,7 +4,7 @@ import type { Genero } from "@/lib/store";
 
 export type { CardGenInput, CardGenResult };
 
-const AI_TIMEOUT_MS = 1500;
+const AI_TIMEOUT_MS = 6000;
 
 function extractDuration(text: string): number | null {
   const min = text.match(/(\d+)\s*minutos?/i);

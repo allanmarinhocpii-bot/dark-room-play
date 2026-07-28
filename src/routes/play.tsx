@@ -85,6 +85,7 @@ function PlayPage() {
   const nextCardBufferRef = useRef<DrawResult | null>(null);
   const prefetchingRef = useRef(false);
   const currentTokenRef = useRef(0);
+  const enhancedRef = useRef(new WeakSet<object>());
 
   // Sorteia localmente — instantâneo, sem esperar IA
   const drawNextSync = (): DrawResult | null => {
@@ -109,6 +110,8 @@ function PlayPage() {
   // Reescreve com IA em segundo plano e aplica se a carta ainda estiver na tela
   const enhance = async (c: DrawResult, token: number) => {
     if (c.kind !== "normal") return;
+    if (enhancedRef.current.has(c)) return;
+    enhancedRef.current.add(c);
     const catKey = c.categories[0];
     const categoriaNome = catKey ? CATEGORIAS[catKey].nome : "Livre";
     const result = await generateCard({
