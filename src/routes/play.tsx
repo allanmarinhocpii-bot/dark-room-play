@@ -84,8 +84,11 @@ function PlayPage() {
   const lastTextsRef = useRef<string[]>([]);
   const nextCardBufferRef = useRef<DrawResult | null>(null);
   const prefetchingRef = useRef(false);
+  const currentTokenRef = useRef(0);
+  const enhancedRef = useRef(new WeakSet<object>());
 
-  const drawNext = async (): Promise<DrawResult | null> => {
+  // Sorteia localmente — instantâneo, sem esperar IA
+  const drawNextSync = (): DrawResult | null => {
     const state = useSessionStore.getState();
     const c = draw({
       jogador1,
@@ -100,90 +103,85 @@ function PlayPage() {
       recentTexts: state.stats.drawnHistory,
     });
     if (!c) return null;
-    recordDraw(
-      c.categories[0] ?? null,
-      c.kind === "normal" ? c.level : null,
-      c.baseText,
-    );
-
-    if (c.kind === "normal") {
-      const catKey = c.categories[0];
-      const categoriaNome = catKey ? CATEGORIAS[catKey].nome : "Livre";
-      const result = await generateCard({
-        carta_base: c.text,
-        ativo: c.ativo.nome,
-        passivo: c.passivo.nome,
-        genero_ativo: c.ativo.genero,
-        genero_passivo: c.passivo.genero,
-        categoria: categoriaNome,
-        nivel: INTENSITY_LABEL[c.level],
-        props_ativos: activePropLabels,
-        modo: mode === "combined" ? "combinado" : "padrao",
-        rodada: useSessionStore.getState().stats.roundsCompleted + 1,
-        ultimas_cartas: lastTextsRef.current.slice(-3),
-      });
-      c.text = result.texto;
-      if (result.segundos && result.segundos > 0) {
-        c.durationSeconds = result.segundos;
-      }
-      if (result.prop_usado) {
-        c.propHint = undefined;
-      }
-      lastTextsRef.current = [...lastTextsRef.current, result.texto].slice(-5);
-    }
+    recordDraw(c.categories[0] ?? null, c.kind === "normal" ? c.level : null, c.baseText);
     return c;
+  };
+
+  // Reescreve com IA em segundo plano e aplica se a carta ainda estiver na tela
+  const enhance = async (c: DrawResult, token: number) => {
+    if (c.kind !== "normal") return;
+    if (enhancedRef.current.has(c)) return;
+    enhancedRef.current.add(c);
+    const catKey = c.categories[0];
+    const categoriaNome = catKey ? CATEGORIAS[catKey].nome : "Livre";
+    const result = await generateCard({
+      carta_base: c.text,
+      ativo: c.ativo.nome,
+      passivo: c.passivo.nome,
+      genero_ativo: c.ativo.genero,
+      genero_passivo: c.passivo.genero,
+      categoria: categoriaNome,
+      nivel: INTENSITY_LABEL[c.level],
+      props_ativos: activePropLabels,
+      modo: mode === "combined" ? "combinado" : "padrao",
+      rodada: useSessionStore.getState().stats.roundsCompleted + 1,
+      ultimas_cartas: lastTextsRef.current.slice(-3),
+    });
+    if (!result.texto || result.texto === c.text) return;
+    lastTextsRef.current = [...lastTextsRef.current, result.texto].slice(-5);
+    c.text = result.texto;
+    if (result.segundos && result.segundos > 0) c.durationSeconds = result.segundos;
+    if (result.prop_usado) c.propHint = undefined;
+    // só atualiza a UI se essa carta ainda for a atual
+    if (currentTokenRef.current === token) {
+      setCard({ ...c });
+    }
   };
 
   const prefetchNext = () => {
     if (prefetchingRef.current || nextCardBufferRef.current) return;
     prefetchingRef.current = true;
-    void drawNext()
-      .then((next) => {
-        nextCardBufferRef.current = next;
-      })
-      .finally(() => {
+    const next = drawNextSync();
+    nextCardBufferRef.current = next;
+    if (next) {
+      void enhance(next, -1).finally(() => {
         prefetchingRef.current = false;
       });
+    } else {
+      prefetchingRef.current = false;
+    }
   };
 
   const advanceTo = (c: DrawResult | null, anim: CardAnimation = "card-flip-in") => {
+    const token = currentTokenRef.current + 1;
+    currentTokenRef.current = token;
     setCard(c);
     setCardId((i) => i + 1);
     setCardAnim(anim);
     setLoadingNext(false);
     if (c) {
-      // dispara prefetch da próxima em background
-      setTimeout(prefetchNext, 250);
+      // se veio direto do sorteio (sem IA ainda), melhora em background
+      void enhance(c, token);
+      prefetchNext();
     }
   };
 
-  const loadNext = async (anim: CardAnimation = "card-flip-in") => {
-    // Usa buffer se disponível
+  const loadNext = (anim: CardAnimation = "card-flip-in") => {
     if (nextCardBufferRef.current) {
       const buffered = nextCardBufferRef.current;
       nextCardBufferRef.current = null;
       advanceTo(buffered, anim);
       return;
     }
-    setLoadingNext(true);
-    const next = await drawNext();
-    advanceTo(next, anim);
+    advanceTo(drawNextSync(), anim);
   };
 
   const trocarCarta = async (motivo: "concluido" | "pulou") => {
     setCardAnim(motivo === "concluido" ? "card-exit-up" : "card-exit-left");
-    await new Promise((r) => setTimeout(r, 250));
-    setCard(null);
-    if (nextCardBufferRef.current) {
-      const buffered = nextCardBufferRef.current;
-      nextCardBufferRef.current = null;
-      advanceTo(buffered, "card-flip-in");
-      return;
-    }
-    setLoadingNext(true);
-    const next = await drawNext();
-    advanceTo(next, "card-flip-in");
+    await new Promise((r) => setTimeout(r, 180));
+    loadNext("card-flip-in");
   };
+
 
 
   // Hydration + initial setup
