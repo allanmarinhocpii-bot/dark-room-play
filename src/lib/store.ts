@@ -60,6 +60,7 @@ interface SessionState {
   score: number;
   level: IntensityRank;
   rounds: number;
+  pontos: { j1: number; j2: number };
   stats: SessionStats;
   // setters
   setJogador1: (p: Partial<Jogador>) => void;
@@ -73,6 +74,7 @@ interface SessionState {
   setRitual: (v: boolean) => void;
   // engine
   awardPoints: (pts: number) => { leveledUp: boolean; newLevel: IntensityRank };
+  awardToPlayer: (who: "j1" | "j2", pts: number) => void;
   recordDraw: (cat: CategoryKey | null, lvl: IntensityRank | null, baseText?: string) => void;
   recordComplete: (passiveIs: "j1" | "j2", lvl: IntensityRank) => void;
   recordSkip: () => void;
@@ -120,6 +122,7 @@ export const useSessionStore = create<SessionState>()(
       score: 0,
       level: 1,
       rounds: 0,
+      pontos: { j1: 0, j2: 0 },
       stats: emptyStats,
 
       setJogador1: (p) => set((s) => ({ jogador1: { ...s.jogador1, ...p } })),
@@ -140,6 +143,9 @@ export const useSessionStore = create<SessionState>()(
         set({ score: newScore, level: newLevel });
         return { leveledUp: newLevel > prev, newLevel };
       },
+
+      awardToPlayer: (who, pts) =>
+        set((s) => ({ pontos: { ...s.pontos, [who]: s.pontos[who] + pts } })),
 
       recordDraw: (cat, lvl, baseText) =>
         set((s) => {
@@ -190,6 +196,7 @@ export const useSessionStore = create<SessionState>()(
           score: 0,
           level: 1,
           rounds: 0,
+          pontos: { j1: 0, j2: 0 },
           stats: { ...emptyStats, startedAt: Date.now() },
         }),
 
@@ -213,6 +220,7 @@ export const useSessionStore = create<SessionState>()(
         score: s.score,
         level: s.level,
         rounds: s.rounds,
+        pontos: s.pontos,
         stats: s.stats,
       }),
       onRehydrateStorage: () => (state) => {
