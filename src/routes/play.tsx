@@ -47,7 +47,9 @@ function PlayPage() {
     level,
     score,
     stats,
+    pontos,
     awardPoints,
+    awardToPlayer,
     recordDraw,
     recordComplete,
     recordSkip,
@@ -127,7 +129,9 @@ function PlayPage() {
       rodada: useSessionStore.getState().stats.roundsCompleted + 1,
       ultimas_cartas: lastTextsRef.current.slice(-3),
     });
-    if (!result.texto || result.texto === c.text) return;
+    const novo = (result.texto ?? "").trim();
+    if (novo.length < 10 || novo === c.text) return;
+    result.texto = novo;
     lastTextsRef.current = [...lastTextsRef.current, result.texto].slice(-5);
     c.text = result.texto;
     if (result.segundos && result.segundos > 0) c.durationSeconds = result.segundos;
@@ -214,6 +218,7 @@ function PlayPage() {
       if (card.categories.length > 1) pts += 5;
     }
     if (card.kind === "twist") recordTwist();
+    awardToPlayer(card.kind === "joker" ? card.ativoIs : card.passivoIs, pts);
     if (card.kind !== "joker" && card.kind !== "tension") {
       recordComplete(card.passivoIs, card.level);
     }
@@ -286,6 +291,17 @@ function PlayPage() {
             Rodada {String(stats.roundsCompleted + 1).padStart(2, "0")}
           </p>
         </div>
+        <div className="mt-4 flex items-center justify-between font-display text-[10px] uppercase tracking-[0.2em]">
+          <span className="text-muted-foreground">
+            {jogador1.nome}{" "}
+            <span className="text-foreground">{String(pontos.j1).padStart(2, "0")}</span>
+          </span>
+          <span className="text-muted-foreground/40">·</span>
+          <span className="text-muted-foreground">
+            {jogador2.nome}{" "}
+            <span className="text-foreground">{String(pontos.j2).padStart(2, "0")}</span>
+          </span>
+        </div>
         <div className="relative mt-5">
           <ProgressionBar level={level} score={score} />
           <PointBurst value={burst} />
@@ -354,7 +370,7 @@ function PlayPage() {
           />
         )}
 
-        {!card && !loadingNext && initialized && !showRitual && (
+        {!card && !loadingNext && initialized && !showRitual && !levelUpTo && (
           <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center">
             <p className="font-display text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
               Sem cartas disponíveis
