@@ -91,22 +91,31 @@ function PlayPage() {
 
   // Sorteia localmente — instantâneo, sem esperar IA
   const drawNextSync = (): DrawResult | null => {
-    const state = useSessionStore.getState();
-    const c = draw({
-      jogador1,
-      jogador2,
-      controle,
-      activeCategories: activeCats,
-      mode,
-      activeProps,
-      level: state.level,
-      roundsCompleted: state.stats.roundsCompleted,
-      cardsDrawn: state.stats.cardsDrawn,
-      recentTexts: state.stats.drawnHistory,
-    });
-    if (!c) return null;
-    recordDraw(c.categories[0] ?? null, c.kind === "normal" ? c.level : null, c.baseText);
-    return c;
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
+      const state = useSessionStore.getState();
+      const c = draw({
+        jogador1,
+        jogador2,
+        controle,
+        activeCategories: activeCats,
+        mode,
+        activeProps,
+        level: state.level,
+        roundsCompleted: state.stats.roundsCompleted,
+        cardsDrawn: state.stats.cardsDrawn,
+        recentTexts: state.stats.drawnHistory,
+      });
+      if (!c) return null;
+      c.text = sanitizeCardText(c.text ?? "");
+      // Descarta cartas sem texto legível e tenta de novo
+      if (c.kind !== "twist" && !hasReadableText(c.text)) {
+        recordDraw(null, null, c.baseText);
+        continue;
+      }
+      recordDraw(c.categories[0] ?? null, c.kind === "normal" ? c.level : null, c.baseText);
+      return c;
+    }
+    return null;
   };
 
   // Reescreve com IA em segundo plano e aplica se a carta ainda estiver na tela
