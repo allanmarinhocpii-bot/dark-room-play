@@ -72,7 +72,7 @@ export function ChallengeCard({
       {/* ZONA 2 — Texto do desafio */}
       <div className="min-h-[120px]">
         <p className="whitespace-pre-line text-[17px] font-light leading-[1.75] text-foreground">
-          {text?.trim() ? text : "Carta indisponível. Toque em Pular para sortear outra."}
+          {legivel ? texto : "Carta indisponível. Toque em Pular para sortear outra."}
         </p>
 
         {propHint && (
