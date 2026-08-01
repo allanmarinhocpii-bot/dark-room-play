@@ -129,8 +129,8 @@ function PlayPage() {
       rodada: useSessionStore.getState().stats.roundsCompleted + 1,
       ultimas_cartas: lastTextsRef.current.slice(-3),
     });
-    const novo = (result.texto ?? "").trim();
-    if (novo.length < 10 || novo === c.text) return;
+    const novo = sanitizeCardText(result.texto ?? "");
+    if (!hasReadableText(novo) || novo === c.text) return;
     result.texto = novo;
     lastTextsRef.current = [...lastTextsRef.current, result.texto].slice(-5);
     c.text = result.texto;
