@@ -1,5 +1,6 @@
 import { CATEGORIAS, INTENSITY_LABEL, type CategoryKey, type IntensityRank } from "@/data/challenges";
 import { TimerArco } from "./TimerArco";
+import { sanitizeCardText, hasReadableText } from "@/services/cardGenerator";
 
 export type CardAnimation = "card-flip-in" | "card-enter-up" | "card-exit-up" | "card-exit-left" | null;
 
