@@ -64,7 +64,7 @@ Reescreve a carta com os dados reais. Responda apenas com o JSON.`;
         "Lovable-API-Key": key,
       },
       body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userMessage },
