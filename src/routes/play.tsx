@@ -20,7 +20,7 @@ import { LevelUpOverlay } from "@/components/LevelUpOverlay";
 import { ProgressionBar } from "@/components/ProgressionBar";
 import { PointBurst } from "@/components/PointBurst";
 import { RitualOverlay } from "@/components/RitualOverlay";
-import { generateCard } from "@/services/cardGenerator";
+import { generateCard, sanitizeCardText, hasReadableText } from "@/services/cardGenerator";
 
 export const Route = createFileRoute("/play")({
   head: () => ({
