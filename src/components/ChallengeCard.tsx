@@ -22,6 +22,8 @@ export function ChallengeCard({
   propHint?: string;
   animation?: CardAnimation;
 }) {
+  const texto = sanitizeCardText(text ?? "");
+  const legivel = hasReadableText(texto);
   const primary = categories[0];
   const secondary = categories[1];
   const primaryColor = primary ? CATEGORIAS[primary].colorVar : "var(--foreground)";
