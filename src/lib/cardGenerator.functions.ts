@@ -64,7 +64,7 @@ Reescreve a carta com os dados reais. Responda apenas com o JSON.`;
         "Lovable-API-Key": key,
       },
       body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userMessage },
@@ -83,6 +83,11 @@ Reescreve a carta com os dados reais. Responda apenas com o JSON.`;
     };
     const raw = json.choices?.[0]?.message?.content ?? "";
     const clean = raw.replace(/```json|```/g, "").trim();
+    if (!clean) throw new Error("AI empty content");
     const parsed = JSON.parse(clean);
-    return ResultSchema.parse(parsed);
+    const result = ResultSchema.parse(parsed);
+    // Rejeita textos sem conteúdo legível (evita cards em branco)
+    const letras = (result.texto.match(/\p{L}/gu) ?? []).length;
+    if (letras < 10) throw new Error("AI text unusable");
+    return result;
   });

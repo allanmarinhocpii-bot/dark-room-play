@@ -28,6 +28,21 @@ function fallback(ctx: CardGenInput): CardGenResult {
   };
 }
 
+/** Remove caracteres invisíveis e normaliza quebras de linha. */
+export function sanitizeCardText(input: string): string {
+  return input
+    .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Texto é utilizável se tiver pelo menos 10 letras reais. */
+export function hasReadableText(input: string | undefined | null): boolean {
+  if (!input) return false;
+  return (sanitizeCardText(input).match(/\p{L}/gu) ?? []).length >= 10;
+}
+
 export async function generateCard(ctx: CardGenInput): Promise<CardGenResult> {
   try {
     const result = await Promise.race<CardGenResult>([
@@ -36,7 +51,9 @@ export async function generateCard(ctx: CardGenInput): Promise<CardGenResult> {
         setTimeout(() => reject(new Error("ai-timeout")), AI_TIMEOUT_MS),
       ),
     ]);
-    return result;
+    const texto = sanitizeCardText(result.texto ?? "");
+    if (!hasReadableText(texto)) return fallback(ctx);
+    return { ...result, texto };
   } catch (err) {
     console.warn("[cardGenerator] fallback:", err);
     return fallback(ctx);

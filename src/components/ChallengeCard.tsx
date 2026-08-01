@@ -1,5 +1,6 @@
 import { CATEGORIAS, INTENSITY_LABEL, type CategoryKey, type IntensityRank } from "@/data/challenges";
 import { TimerArco } from "./TimerArco";
+import { sanitizeCardText, hasReadableText } from "@/services/cardGenerator";
 
 export type CardAnimation = "card-flip-in" | "card-enter-up" | "card-exit-up" | "card-exit-left" | null;
 
@@ -22,6 +23,8 @@ export function ChallengeCard({
   propHint?: string;
   animation?: CardAnimation;
 }) {
+  const texto = sanitizeCardText(text ?? "");
+  const legivel = hasReadableText(texto);
   const primary = categories[0];
   const secondary = categories[1];
   const primaryColor = primary ? CATEGORIAS[primary].colorVar : "var(--foreground)";
@@ -72,7 +75,7 @@ export function ChallengeCard({
       {/* ZONA 2 — Texto do desafio */}
       <div className="min-h-[120px]">
         <p className="whitespace-pre-line text-[17px] font-light leading-[1.75] text-foreground">
-          {text?.trim() ? text : "Carta indisponível. Toque em Pular para sortear outra."}
+          {legivel ? texto : "Carta indisponível. Toque em Pular para sortear outra."}
         </p>
 
         {propHint && (
