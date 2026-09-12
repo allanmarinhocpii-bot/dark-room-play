@@ -26,6 +26,11 @@ export const Route = createFileRoute("/play")({
   head: () => ({
     meta: [
       { title: "Dark Room — Arena" },
+      { name: "description", content: "Arena de desafios e progressão da sessão Dark Room." },
+      { property: "og:title", content: "Dark Room — Arena" },
+      { property: "og:description", content: "Arena de desafios e progressão da sessão Dark Room." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -191,7 +196,7 @@ function PlayPage() {
 
   const trocarCarta = async (motivo: "concluido" | "pulou") => {
     setCardAnim(motivo === "concluido" ? "card-exit-up" : "card-exit-left");
-    await new Promise((r) => setTimeout(r, 180));
+    await new Promise((r) => setTimeout(r, 250));
     loadNext("card-flip-in");
   };
 

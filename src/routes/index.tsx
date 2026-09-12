@@ -10,6 +10,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Dark Room — Jogo para Casais" },
       { name: "description", content: "Jogo de cartas íntimo para casais." },
+      { property: "og:title", content: "Dark Room — Jogo para Casais" },
+      { property: "og:description", content: "Jogo de cartas íntimo para casais." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

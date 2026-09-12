@@ -6,6 +6,11 @@ export const Route = createFileRoute("/historia")({
   head: () => ({
     meta: [
       { title: "Dark Room — Histórico" },
+      { name: "description", content: "Resumo de pontos, níveis e destaques da sessão Dark Room." },
+      { property: "og:title", content: "Dark Room — Histórico" },
+      { property: "og:description", content: "Resumo de pontos, níveis e destaques da sessão Dark Room." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
