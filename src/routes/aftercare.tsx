@@ -5,6 +5,11 @@ export const Route = createFileRoute("/aftercare")({
   head: () => ({
     meta: [
       { title: "Dark Room — Aftercare" },
+      { name: "description", content: "Encerramento e cuidados após a sessão Dark Room." },
+      { property: "og:title", content: "Dark Room — Aftercare" },
+      { property: "og:description", content: "Encerramento e cuidados após a sessão Dark Room." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
