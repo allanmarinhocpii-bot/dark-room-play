@@ -4,6 +4,8 @@ import { sanitizeCardText, hasReadableText } from "@/services/cardGenerator";
 
 export type CardAnimation = "card-flip-in" | "card-enter-up" | "card-exit-up" | "card-exit-left" | null;
 
+const TWIST_COLOR = "#F97316";
+
 export function ChallengeCard({
   text,
   categories,
@@ -12,6 +14,7 @@ export function ChallengeCard({
   ativoNome,
   passivoNome,
   propHint,
+  twisted = false,
   animation = "card-flip-in",
 }: {
   text: string;
@@ -21,14 +24,16 @@ export function ChallengeCard({
   ativoNome: string;
   passivoNome: string;
   propHint?: string;
+  twisted?: boolean;
   animation?: CardAnimation;
 }) {
   const texto = sanitizeCardText(text ?? "");
   const legivel = hasReadableText(texto);
   const primary = categories[0];
   const secondary = categories[1];
-  const primaryColor = primary ? CATEGORIAS[primary].colorVar : "var(--foreground)";
-  const secondaryColor = secondary ? CATEGORIAS[secondary].colorVar : primaryColor;
+  const catColor = primary ? CATEGORIAS[primary].colorVar : "var(--foreground)";
+  const primaryColor = twisted ? TWIST_COLOR : catColor;
+  const secondaryColor = secondary ? CATEGORIAS[secondary].colorVar : catColor;
   const primaryName = primary ? CATEGORIAS[primary].short : "Livre";
 
   return (
@@ -36,13 +41,25 @@ export function ChallengeCard({
       className={`relative w-full max-w-md rounded-xl border bg-card p-6 ${animation ?? "card-flip-in"}`}
       style={{
         borderColor: primaryColor,
-        boxShadow: `0 0 20px color-mix(in oklab, ${primaryColor} 13%, transparent)`,
+        boxShadow: twisted
+          ? `0 0 28px color-mix(in oklab, ${TWIST_COLOR} 28%, transparent)`
+          : `0 0 20px color-mix(in oklab, ${primaryColor} 13%, transparent)`,
         backgroundImage: secondary
-          ? `linear-gradient(135deg, color-mix(in oklab, ${primaryColor} 7%, transparent), color-mix(in oklab, ${secondaryColor} 7%, transparent))`
+          ? `linear-gradient(135deg, color-mix(in oklab, ${catColor} 7%, transparent), color-mix(in oklab, ${secondaryColor} 7%, transparent))`
           : undefined,
         perspective: 1000,
+        animationName: undefined,
       }}
     >
+      {twisted && (
+        <p
+          className="mb-3 animate-pulse font-display text-[9px] uppercase tracking-[0.35em]"
+          style={{ color: TWIST_COLOR }}
+        >
+          ↔ Virada · papéis invertidos
+        </p>
+      )}
+
       {/* ZONA 1 — Header */}
       <div className="mb-5">
         <p
@@ -54,7 +71,7 @@ export function ChallengeCard({
         <div className="flex flex-wrap items-center gap-2">
           <span
             className="rounded-full border px-2.5 py-0.5 font-display text-[10px] uppercase tracking-[0.15em]"
-            style={{ borderColor: primaryColor, color: primaryColor }}
+            style={{ borderColor: catColor, color: catColor }}
           >
             {primaryName}
           </span>
@@ -66,8 +83,22 @@ export function ChallengeCard({
               {CATEGORIAS[secondary].short}
             </span>
           )}
-          <span className="ml-auto font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {INTENSITY_LABEL[level]}
+          <span
+            className="ml-auto flex items-center gap-1"
+            title={INTENSITY_LABEL[level]}
+            aria-label={`Intensidade ${INTENSITY_LABEL[level]}`}
+          >
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span
+                key={n}
+                className="h-1.5 w-1.5 rounded-full"
+                style={{
+                  background: n <= level ? catColor : "transparent",
+                  border: n <= level ? "none" : "1px solid color-mix(in oklab, var(--foreground) 25%, transparent)",
+                  boxShadow: n <= level ? `0 0 5px ${catColor}` : undefined,
+                }}
+              />
+            ))}
           </span>
         </div>
       </div>
