@@ -97,20 +97,20 @@ export const CATEGORIAS: Record<CategoryKey, Categoria> = {
         "{passivo} fecha os olhos e tenta adivinhar onde {ativo} vai tocar a seguir.",
       ],
       2: [
-        "{passivo} vendado. {ativo} se aproxima em silêncio e toca por 2 minutos.",
+        "{passivo} vendad{o_a}. {ativo} se aproxima em silêncio e toca por 2 minutos.",
         "{ativo} sopra ar frio na pele de {passivo} sem encostar.",
         "{ativo} alterna texturas (tecido áspero, pele, sopro) no corpo de {passivo}.",
       ],
       3: [
-        "{passivo} vendado e proibido de falar. {ativo} comanda toda a próxima rodada.",
+        "{passivo} vendad{o_a} e proibid{o_a} de falar. {ativo} comanda toda a próxima rodada.",
         "{ativo} usa o próprio cabelo para fazer carícias no peito e abdômen de {passivo} às cegas.",
       ],
       4: [
-        "{passivo} vendado e com mordaça leve. {ativo} dita a respiração por 3 minutos.",
+        "{passivo} vendad{o_a} e com mordaça leve. {ativo} dita a respiração por 3 minutos.",
         "Quarto em escuridão absoluta. {ativo} guia {passivo} apenas pela voz.",
       ],
       5: [
-        "{passivo} vendado, sem som (fones), sem fala. {ativo} é o único canal sensorial pelos próximos 5 minutos.",
+        "{passivo} vendad{o_a}, sem som (fones), sem fala. {ativo} é o único canal sensorial pelos próximos 5 minutos.",
       ],
     },
   },
@@ -121,7 +121,7 @@ export const CATEGORIAS: Record<CategoryKey, Categoria> = {
     rankBase: 2,
     acoes: {
       2: [
-        "{passivo} proibido de emitir qualquer som por 2 minutos enquanto {ativo} toca.",
+        "{passivo} proibid{o_a} de emitir qualquer som por 2 minutos enquanto {ativo} toca.",
         "{ativo} dita o ritmo por comandos curtos: pare, continue, lento, rápido.",
         "{passivo} mantém olhos fixos nos olhos de {ativo} — proibido desviar.",
       ],
@@ -158,11 +158,11 @@ export const CATEGORIAS: Record<CategoryKey, Categoria> = {
       ],
       4: [
         "Pulsos e tornozelos de {passivo} amarrados por trás. {ativo} comanda totalmente.",
-        "{passivo} totalmente imobilizado por um lençol esticado sobre o corpo.",
+        "{passivo} totalmente imobilizad{o_a} por um lençol esticado sobre o corpo.",
         "{ativo} prende uma das pernas de {passivo} erguida na cabeceira.",
       ],
       5: [
-        "{passivo} amarrado, vendado e em silêncio por 5 minutos. {ativo} faz o que quiser.",
+        "{passivo} amarrad{o_a}, vendad{o_a} e em silêncio por 5 minutos. {ativo} faz o que quiser.",
       ],
     },
   },
@@ -229,11 +229,11 @@ export const CATEGORIAS: Record<CategoryKey, Categoria> = {
       4: [
         "{passivo} massageia {ativo} por 10 minutos sem parar e sem retribuição.",
         "{ativo} mantém estímulo repetitivo por 5 minutos — {passivo} deve aguentar sem se mover.",
-        "{passivo} permanece ajoelhado em silêncio aos pés da cama por 5 minutos aguardando ordens.",
+        "{passivo} permanece ajoelhad{o_a} em silêncio aos pés da cama por 5 minutos aguardando ordens.",
       ],
       5: [
         "Edging: {ativo} leva {passivo} à beira do ápice 5 vezes seguidas, sem permitir.",
-        "Sessão de 15 minutos focada exclusivamente no prazer de {ativo}. {passivo} proibido de receber.",
+        "Sessão de 15 minutos focada exclusivamente no prazer de {ativo}. {passivo} proibid{o_a} de receber.",
         "Edging psicológico: {ativo} dita fantasias por 10 minutos sem permitir nenhum toque físico.",
       ],
     },
@@ -257,9 +257,16 @@ export const TENSAO_PSICOLOGICA = {
   ],
 };
 
-// Carta de Virada — força inversão de papéis
+// Carta de Virada — o desafio sai com os papéis invertidos
 export const VIRADA = {
   texto: "Os papéis invertem por essa rodada.",
+};
+
+// Carta final — oferecida depois de algumas rodadas no Ápice
+export const CARTA_FINAL = {
+  titulo: "A última carta",
+  texto:
+    "Vocês chegaram ao fim da ascensão. Fiquem em silêncio, pele com pele, o tempo que quiserem. Quando soltarem, a sessão acaba.",
 };
 
 // Mapeamento de props → texto adicional injetado quando ativo + compatível

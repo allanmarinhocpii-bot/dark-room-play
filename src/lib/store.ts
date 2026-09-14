@@ -25,10 +25,12 @@ export interface SessionStats {
   maxLevelPlayed: IntensityRank;
   passiveLoad: { j1: number; j2: number }; // soma de níveis recebidos como passivo
   endReason: "normal" | "safeword" | null;
-  drawnHistory: string[]; // últimos baseTexts sorteados (máx. 10)
+  drawnHistory: string[]; // últimos baseTexts sorteados
+  apexStartRound: number | null; // rodada em que o Ápice foi atingido
+  maxLevelCompleted: IntensityRank; // maior intensidade efetivamente concluída
 }
 
-const HISTORY_LIMIT = 10;
+const HISTORY_LIMIT = 20;
 
 const emptyStats: SessionStats = {
   startedAt: null,
@@ -42,6 +44,8 @@ const emptyStats: SessionStats = {
   passiveLoad: { j1: 0, j2: 0 },
   endReason: null,
   drawnHistory: [],
+  apexStartRound: null,
+  maxLevelCompleted: 1,
 };
 
 interface SessionState {
@@ -140,7 +144,14 @@ export const useSessionStore = create<SessionState>()(
         const prev = get().level;
         const newScore = get().score + pts;
         const newLevel = levelForScore(newScore);
-        set({ score: newScore, level: newLevel });
+        set((s) => ({
+          score: newScore,
+          level: newLevel,
+          stats:
+            newLevel === 5 && prev < 5
+              ? { ...s.stats, apexStartRound: s.stats.roundsCompleted }
+              : s.stats,
+        }));
         return { leveledUp: newLevel > prev, newLevel };
       },
 
@@ -173,6 +184,9 @@ export const useSessionStore = create<SessionState>()(
           stats: {
             ...s.stats,
             roundsCompleted: s.stats.roundsCompleted + 1,
+            maxLevelCompleted: (lvl > s.stats.maxLevelCompleted
+              ? lvl
+              : s.stats.maxLevelCompleted) as IntensityRank,
             passiveLoad: {
               ...s.stats.passiveLoad,
               [passiveIs]: s.stats.passiveLoad[passiveIs] + lvl,

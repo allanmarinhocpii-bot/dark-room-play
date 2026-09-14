@@ -3,7 +3,7 @@ import {
   CATEGORIAS,
   PROPS,
   TENSAO_PSICOLOGICA,
-  VIRADA,
+  
   type CategoryKey,
   type IntensityRank,
   type PropId,
@@ -26,10 +26,11 @@ export interface DrawResult {
   passivo: PlayerLite;
   ativoIs: "j1" | "j2";
   passivoIs: "j1" | "j2";
-  categories: CategoryKey[]; // vazio para joker/tension/twist
+  categories: CategoryKey[]; // vazio para joker/tension
   level: IntensityRank;
   durationSeconds?: number;
   propHint?: string;
+  twisted?: boolean; // carta de virada: papéis invertidos em relação à anterior
 }
 
 function pick<T>(arr: T[]): T {
@@ -63,6 +64,8 @@ interface DrawInput {
   cardsDrawn: number;
   forcedTwist?: boolean;
   recentTexts?: string[]; // histórico de baseTexts recentes p/ evitar repetição
+  lastKind?: DrawKind; // tipo da carta anterior (evita especiais seguidas)
+  lastAtivoIs?: "j1" | "j2"; // quem comandou a carta anterior (usado na virada)
 }
 
 function resolveRoles(
@@ -70,6 +73,18 @@ function resolveRoles(
   swap = false,
 ): { ativo: PlayerLite; passivo: PlayerLite; ativoIs: "j1" | "j2"; passivoIs: "j1" | "j2" } {
   let activeIs: "j1" | "j2";
+  if (swap && input.lastAtivoIs) {
+    // Virada real: inverte exatamente quem comandou na rodada anterior
+    activeIs = input.lastAtivoIs === "j1" ? "j2" : "j1";
+    const ativoSwap = activeIs === "j1" ? input.jogador1 : input.jogador2;
+    const passivoSwap = activeIs === "j1" ? input.jogador2 : input.jogador1;
+    return {
+      ativo: ativoSwap,
+      passivo: passivoSwap,
+      ativoIs: activeIs,
+      passivoIs: activeIs === "j1" ? "j2" : "j1",
+    };
+  }
   if (input.controle === "j1") activeIs = "j1";
   else if (input.controle === "j2") activeIs = "j2";
   else activeIs = Math.random() < 0.5 ? "j1" : "j2";
@@ -96,8 +111,10 @@ function buildPropHint(
   return undefined;
 }
 
+/** Só é utilizável se tiver ação dentro do teto do nível atual — nunca acima. */
 function catHasActionAt(cat: CategoryKey, level: IntensityRank): boolean {
   const data = CATEGORIAS[cat];
+  if (data.rankBase > level) return false;
   const ranks: IntensityRank[] = [1, 2, 3, 4, 5];
   for (const r of ranks) {
     if (r > level) continue;
@@ -105,15 +122,11 @@ function catHasActionAt(cat: CategoryKey, level: IntensityRank): boolean {
     const list = data.acoes[r];
     if (list && list.length > 0) return true;
   }
-  for (const r of ranks) {
-    const list = data.acoes[r];
-    if (list && list.length > 0) return true;
-  }
   return false;
 }
 
-function drawNormal(input: DrawInput): DrawResult | null {
-  const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input);
+function drawNormal(input: DrawInput, swap = false): DrawResult | null {
+  const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input, swap);
   const usable = input.activeCategories.filter((c) => catHasActionAt(c, input.level));
   if (usable.length === 0) return null;
 
@@ -129,13 +142,6 @@ function drawNormal(input: DrawInput): DrawResult | null {
       const list = data.acoes[r];
       if (!list) continue;
       list.forEach((t) => available.push({ text: t, lvl: r }));
-    }
-    if (available.length === 0) {
-      for (const r of ranks) {
-        const list = data.acoes[r];
-        if (!list) continue;
-        list.forEach((t) => available.push({ text: t, lvl: r }));
-      }
     }
     if (available.length === 0) return null;
     // Filtra recentes (se sobrar algo)
@@ -226,10 +232,13 @@ function drawNormal(input: DrawInput): DrawResult | null {
 
 function drawTension(input: DrawInput): DrawResult {
   const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input);
-  const txt = pick(TENSAO_PSICOLOGICA.acoes);
+  const recent = new Set(input.recentTexts ?? []);
+  const pool = TENSAO_PSICOLOGICA.acoes.filter((t) => !recent.has(t));
+  const txt = pick(pool.length > 0 ? pool : [...TENSAO_PSICOLOGICA.acoes]);
   return {
     kind: "tension",
     text: interpolate(txt, { ativo, passivo }),
+    baseText: txt,
     ativo,
     passivo,
     ativoIs,
@@ -244,6 +253,7 @@ function drawJoker(input: DrawInput): DrawResult {
   return {
     kind: "joker",
     text: `${ativo.nome} decide.`,
+    baseText: "__joker__",
     ativo,
     passivo,
     ativoIs,
@@ -253,33 +263,29 @@ function drawJoker(input: DrawInput): DrawResult {
   };
 }
 
-function drawTwist(input: DrawInput): DrawResult {
-  const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input, true);
-  return {
-    kind: "twist",
-    text: interpolate(VIRADA.texto, { ativo, passivo }),
-    ativo,
-    passivo,
-    ativoIs,
-    passivoIs,
-    categories: [],
-    level: input.level,
-  };
-}
-
+/** Cadência das cartas especiais: probabilística, sem duas especiais seguidas. */
 export function decideKind(input: DrawInput): DrawKind {
   if (input.forcedTwist) return "twist";
   const turn = input.cardsDrawn + 1;
-  if (turn % 15 === 0) return "joker";
-  if (turn % 5 === 0) return "twist";
-  if (turn % 4 === 0) return "tension";
+  if (turn <= 2) return "normal"; // as duas primeiras são sempre normais
+  const anterior = input.lastKind;
+  if (anterior === "tension" || anterior === "joker") return "normal";
+  const r = Math.random();
+  if (r < 0.05) return "joker";
+  if (r < 0.2) return "tension";
+  if (anterior !== "twist" && r < 0.34) return "twist";
   return "normal";
 }
 
 export function draw(input: DrawInput): DrawResult | null {
   const kind = decideKind(input);
-  if (kind === "twist") return drawTwist(input);
   if (kind === "tension") return drawTension(input);
   if (kind === "joker") return drawJoker(input);
+  // Virada: desafio real, com os papéis invertidos em relação à rodada anterior
+  if (kind === "twist") {
+    const c = drawNormal(input, true);
+    if (c) return { ...c, twisted: true };
+    return null;
+  }
   return drawNormal(input);
 }

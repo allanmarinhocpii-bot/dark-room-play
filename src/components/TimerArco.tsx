@@ -4,12 +4,13 @@ interface TimerArcoProps {
   segundos: number;
   cor: string;
   resetKey?: string;
+  autoStart?: boolean;
   onComplete?: () => void;
 }
 
-export function TimerArco({ segundos, cor, resetKey, onComplete }: TimerArcoProps) {
+export function TimerArco({ segundos, cor, resetKey, autoStart = true, onComplete }: TimerArcoProps) {
   const [restante, setRestante] = useState(segundos);
-  const [rodando, setRodando] = useState(false);
+  const [rodando, setRodando] = useState(autoStart);
   const [completo, setCompleto] = useState(false);
   const completedRef = useRef(false);
 
@@ -19,10 +20,10 @@ export function TimerArco({ segundos, cor, resetKey, onComplete }: TimerArcoProp
 
   useEffect(() => {
     setRestante(segundos);
-    setRodando(false);
+    setRodando(autoStart);
     setCompleto(false);
     completedRef.current = false;
-  }, [resetKey, segundos]);
+  }, [resetKey, segundos, autoStart]);
 
   useEffect(() => {
     if (!rodando) return;
@@ -117,7 +118,7 @@ export function TimerArco({ segundos, cor, resetKey, onComplete }: TimerArcoProp
         </div>
       </button>
       <p className="font-display text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        {completo ? "Concluído" : rodando ? `${restante}s` : "Toque para iniciar"}
+        {completo ? "Concluído" : rodando ? `${restante}s` : `${restante}s · pausado`}
       </p>
     </div>
   );
