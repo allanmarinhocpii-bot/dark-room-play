@@ -26,10 +26,11 @@ export interface DrawResult {
   passivo: PlayerLite;
   ativoIs: "j1" | "j2";
   passivoIs: "j1" | "j2";
-  categories: CategoryKey[]; // vazio para joker/tension/twist
+  categories: CategoryKey[]; // vazio para joker/tension
   level: IntensityRank;
   durationSeconds?: number;
   propHint?: string;
+  twisted?: boolean; // carta de virada: papéis invertidos em relação à anterior
 }
 
 function pick<T>(arr: T[]): T {
@@ -63,6 +64,8 @@ interface DrawInput {
   cardsDrawn: number;
   forcedTwist?: boolean;
   recentTexts?: string[]; // histórico de baseTexts recentes p/ evitar repetição
+  lastKind?: DrawKind; // tipo da carta anterior (evita especiais seguidas)
+  lastAtivoIs?: "j1" | "j2"; // quem comandou a carta anterior (usado na virada)
 }
 
 function resolveRoles(
@@ -70,6 +73,18 @@ function resolveRoles(
   swap = false,
 ): { ativo: PlayerLite; passivo: PlayerLite; ativoIs: "j1" | "j2"; passivoIs: "j1" | "j2" } {
   let activeIs: "j1" | "j2";
+  if (swap && input.lastAtivoIs) {
+    // Virada real: inverte exatamente quem comandou na rodada anterior
+    activeIs = input.lastAtivoIs === "j1" ? "j2" : "j1";
+    const ativoSwap = activeIs === "j1" ? input.jogador1 : input.jogador2;
+    const passivoSwap = activeIs === "j1" ? input.jogador2 : input.jogador1;
+    return {
+      ativo: ativoSwap,
+      passivo: passivoSwap,
+      ativoIs: activeIs,
+      passivoIs: activeIs === "j1" ? "j2" : "j1",
+    };
+  }
   if (input.controle === "j1") activeIs = "j1";
   else if (input.controle === "j2") activeIs = "j2";
   else activeIs = Math.random() < 0.5 ? "j1" : "j2";
