@@ -143,13 +143,6 @@ function drawNormal(input: DrawInput, swap = false): DrawResult | null {
       if (!list) continue;
       list.forEach((t) => available.push({ text: t, lvl: r }));
     }
-    if (available.length === 0) {
-      for (const r of ranks) {
-        const list = data.acoes[r];
-        if (!list) continue;
-        list.forEach((t) => available.push({ text: t, lvl: r }));
-      }
-    }
     if (available.length === 0) return null;
     // Filtra recentes (se sobrar algo)
     const filtered = available.filter((a) => !recent.has(a.text));
