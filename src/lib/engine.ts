@@ -232,10 +232,13 @@ function drawNormal(input: DrawInput, swap = false): DrawResult | null {
 
 function drawTension(input: DrawInput): DrawResult {
   const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input);
-  const txt = pick(TENSAO_PSICOLOGICA.acoes);
+  const recent = new Set(input.recentTexts ?? []);
+  const pool = TENSAO_PSICOLOGICA.acoes.filter((t) => !recent.has(t));
+  const txt = pick(pool.length > 0 ? pool : [...TENSAO_PSICOLOGICA.acoes]);
   return {
     kind: "tension",
     text: interpolate(txt, { ativo, passivo }),
+    baseText: txt,
     ativo,
     passivo,
     ativoIs,
@@ -250,6 +253,7 @@ function drawJoker(input: DrawInput): DrawResult {
   return {
     kind: "joker",
     text: `${ativo.nome} decide.`,
+    baseText: "__joker__",
     ativo,
     passivo,
     ativoIs,
@@ -259,33 +263,29 @@ function drawJoker(input: DrawInput): DrawResult {
   };
 }
 
-function drawTwist(input: DrawInput): DrawResult {
-  const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input, true);
-  return {
-    kind: "twist",
-    text: interpolate(VIRADA.texto, { ativo, passivo }),
-    ativo,
-    passivo,
-    ativoIs,
-    passivoIs,
-    categories: [],
-    level: input.level,
-  };
-}
-
+/** Cadência das cartas especiais: probabilística, sem duas especiais seguidas. */
 export function decideKind(input: DrawInput): DrawKind {
   if (input.forcedTwist) return "twist";
   const turn = input.cardsDrawn + 1;
-  if (turn % 15 === 0) return "joker";
-  if (turn % 5 === 0) return "twist";
-  if (turn % 4 === 0) return "tension";
+  if (turn <= 2) return "normal"; // as duas primeiras são sempre normais
+  const anterior = input.lastKind;
+  if (anterior === "tension" || anterior === "joker") return "normal";
+  const r = Math.random();
+  if (r < 0.05) return "joker";
+  if (r < 0.2) return "tension";
+  if (anterior !== "twist" && r < 0.34) return "twist";
   return "normal";
 }
 
 export function draw(input: DrawInput): DrawResult | null {
   const kind = decideKind(input);
-  if (kind === "twist") return drawTwist(input);
   if (kind === "tension") return drawTension(input);
   if (kind === "joker") return drawJoker(input);
+  // Virada: desafio real, com os papéis invertidos em relação à rodada anterior
+  if (kind === "twist") {
+    const c = drawNormal(input, true);
+    if (c) return { ...c, twisted: true };
+    return null;
+  }
   return drawNormal(input);
 }
