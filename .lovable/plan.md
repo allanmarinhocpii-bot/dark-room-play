@@ -1,88 +1,57 @@
-# Plano — Dark Room v2
+# Dark Room — Diagnóstico da sessão de teste + melhorias
 
-Implementação em fases das 12 melhorias. Mantém estética dark atual; muda arquitetura, conteúdo e fluxo.
+Joguei uma sessão completa automatizada (setup → ritual → 46 rodadas, até o nível Ápice). Nenhum erro de tela em branco ou travamento apareceu, e nenhum erro de console foi registrado. Mas vários problemas de lógica ficaram visíveis no registro da partida.
 
-## Fase 1 — Fundação (dados + motor)
+## Bugs encontrados (com evidência da partida)
 
-**1.1 Novo banco de dados** (`src/data/challenges.ts`)
-- Reestruturar: cada categoria com `acoes` indexadas por nível (`"1"` a `"5"`), `rank_base`, flags `oculta` e `especial`.
-- Adicionar categorias novas: `tensao_psicologica` (oculta), `coringa` (especial), `virada` (especial).
-- Textos com variáveis `{ativo} {passivo} {pronome} {pronome_cap} {dele_dela} {dele_dela_ativo} {local}`.
-- S/M (impact) com array `locais`.
+**1. Cartas de intensidade máxima aparecem na Rodada 01 (crítico)**
+Na primeira rodada, ainda em "Ignição", saiu uma carta marcada como MÁXIMA (controle total de clímax). Quando a categoria sorteada não tem ação para o nível atual, o motor libera qualquer nível em vez de pular a categoria. Isso destrói a sensação de ascensão.
+Correção: se a categoria não tem ação compatível, sortear outra categoria; só usar o fallback dentro do teto do nível atual.
 
-**1.2 Sistema de jogadores + gênero** (store)
-- Adicionar ao store: `jogador1 {nome, genero}`, `jogador2 {nome, genero}`, `controle: 'aleatorio'|'j1'|'j2'`.
-- Persistir em sessionStorage.
-- A cada nova carta, calcular `ativo`/`passivo` conforme `controle`.
+**2. Cartas PAUSA (tensão psicológica) e CORINGA não contam rodada**
+Registro: "Rodada 04" na carta normal, PAUSA concluída, e continua "Rodada 04". O contador de rodadas, o histórico e a carga de intensidade ignoram essas cartas, mas os pontos são dados.
+Correção: contar a rodada em todos os tipos de carta concluída.
 
-**1.3 Motor de substituição** (`src/lib/text.ts` novo)
-- Função `interpolate(texto, {ativo, passivo})` que troca todas as variáveis.
-- Pronomes derivados do gênero do passivo/ativo.
+**3. Carta de VIRADA não inverte de verdade**
+Ela sorteia papéis do zero em vez de inverter os papéis da carta anterior, então às vezes "inverte" para a mesma configuração. Além disso, dá 20 pontos sem propor nenhuma ação — é a carta mais lucrativa e a mais vazia do jogo.
+Correção: inverter os papéis reais da rodada anterior e acoplar a virada a um desafio real (a próxima carta já sai invertida), reduzindo o bônus para algo coerente.
 
-**1.4 Motor de props como camada adicional** (`engine.ts`)
-- Mapa `PROP_HINTS` (venda/gelo/corda/etc → frase extra).
-- Retorna `{ text, propHint? }`. Card exibe propHint em itálico.
-- Match por keywords (categoria/texto compatível).
+**4. Concordância de gênero errada**
+Apareceu "Bia vendado e proibido de falar". Vários textos-base têm adjetivos fixos no masculino.
+Correção: usar variáveis de concordância nos textos ({o_a}, {vendado_a}) e reforçar no prompt da IA que a concordância deve seguir o gênero informado.
 
-## Fase 2 — Sistema de níveis (5 níveis)
+**5. Repetição de cartas PAUSA**
+"Descreve em detalhes o que vai acontecer..." e "Circula em volta sem tocar..." saíram duas vezes cada. As cartas de tensão não entram no histórico antirrepetição.
+Correção: registrar o texto-base das cartas especiais no histórico e ampliar o histórico de 10 para ~20.
 
-**2.1** Substituir `LEVELS` (3 → 5): IGNIÇÃO/SEDUÇÃO/TENSÃO/ENTREGA/ÁPICE com thresholds 0/20/50/100/180 e cores definidas.
-**2.2** `levelForScore` atualizado. `IntensityRank = 1..5`.
-**2.3** Pontuação: +10 concluído, +15 c/ timer, +5 combinado, +20 carta de virada.
-**2.4** Filtro de cartas no engine: nível da ação ≤ nível atual.
+**6. Cadência das cartas especiais é previsível**
+Tensão a cada 4, virada a cada 5, coringa a cada 15 — sempre nos mesmos turnos, o que gerou sequências de especial-atrás-de-especial. Correção: cadência com variação aleatória dentro de uma janela e bloqueio de duas especiais seguidas.
 
-## Fase 3 — Cartas especiais
+**7. Frase em primeira pessoa fora de voz**
+"Allan, seus olhos não vão sair dos meus" — o jogo fala como se fosse um dos jogadores. Revisar os textos-base nesse padrão.
 
-**3.1 Coringa**: 1 a cada ~15 sorteios (contador no store). Renderiza tela única (fundo branco, texto preto "{ativo} decide."). Componente `JokerCard`.
-**3.2 Virada**: a cada 5 rodadas concluídas, força próxima carta como virada. Inverte ativo/passivo só naquela rodada. +20 pts. Borda laranja pulsante. Componente `TwistCard`.
-**3.3 Tensão Psicológica**: a cada 4 rodadas concluídas, força carta dessa categoria (oculta, sem toggle). Borda cinza sutil.
+**8. Ápice é um beco sem saída**
+Chegando ao nível 5, a barra mostra "—" e a partida segue indefinidamente sem nenhum fechamento. Correção: após X rodadas no Ápice, oferecer a carta final ("última carta") que encerra e leva ao aftercare.
 
-Engine decide a sequência: virada > tensão psicológica > coringa (probabilístico) > sorteio normal.
+## Melhorias sugeridas
 
-## Fase 4 — Setup expandido (`/`)
-
-Ordem de seções:
-- **00 · Jogadores**: 2 nomes + gênero (M/F) + "Quem comanda" (3 botões).
-- **01 · Safe Word** (existente).
-- **02 · Categorias** (com glow ativo — já existente, refinar).
-- **03 · Props** como chips com check (refazer visual).
-- **04 · Modo de jogo**: Padrão / Combinado.
-- **05 · Pontuação**: Juntos / Competitivo (+ campos secretos de recompensa quando competitivo).
-- **06 · Ritual de abertura** (toggle, padrão on).
-
-Validação: nomes obrigatórios + safe word + ≥1 categoria.
-
-## Fase 5 — Fluxo de jogo (`/play`)
-
-**5.1 Ritual** (`/ritual` nova rota ou overlay): tela fullscreen com timer 30s opcional, botão "Estamos prontos".
-**5.2 Card redesenhado** (`ChallengeCard`):
-- Topo: linha "{ativo} comanda · {passivo} recebe" + badges (categoria + intensidade).
-- Centro: texto 18-20px, respiro generoso.
-- Prop hint em itálico, opacity 70%.
-- Timer como arco SVG circular (sem números), pulsa ao zerar.
-**5.3 Animações**: flip de entrada (rotateY 0.4s), concluir → slide up + fade, pular → slide left + fade. Framer-motion.
-**5.4 Barra de progressão narrativa**: nome do nível atual ← barra com glow → próximo nível. Sem números. Micro-pulso ao pontuar.
-**5.5 Safe word discreto**: ícone ⬡ canto superior direito, expande no hover/touch para botão completo.
-**5.6 Level-up cinematográfico**: fullscreen, nome 72-80px na cor do nível, subtítulo, glow pulsante, botão "Continuar" aparece após 2.5s.
-**5.7 Micro-animações**: "+10/+15" sobe e some em verde neon perto da barra ao pontuar.
-
-## Fase 6 — Final de sessão
-
-**6.1 Aftercare** (`/aftercare`): visual invertido (bege `#F5F0EB`, texto escuro, sem neon). Texto diferente para safe-word vs. encerramento normal. Cross-fade 0.8s. Botão único "Estamos bem." → histórico.
-**6.2 Histórico** (`/historia` nova rota): nível alcançado, rodadas, top 3 categorias, tempo total, pulos, carta mais intensa. Se competitivo: revela recompensa do vencedor (quem recebeu mais soma de níveis como passivo). Botão "Nova sessão" → `/`.
-
-Store rastreia: `startedAt`, `roundsCompleted`, `skips`, `categoryCounts`, `maxLevelPlayed`, `passiveLoad: {j1, j2}`.
+- **Placar mais justo:** hoje o ponto sempre vai para quem recebe, então o placar mede "quem aguentou mais" — o que faz sentido no modo competitivo, mas no modo Juntos confunde. No modo Juntos, mostrar só a pontuação da dupla.
+- **Cartas com timer:** iniciar o timer automaticamente em vez de exigir toque, com opção de pausar.
+- **Botão "trocar de categoria"** na carta, além de Pular, para quem quer outro clima sem perder a rodada.
+- **Intensidade visível como escala** (1 a 5 pontinhos) em vez de só a palavra BAIXA/ALTA.
+- **Resumo de sessão mais rico:** carta mais intensa concluída e tempo médio por rodada.
 
 ## Detalhes técnicos
 
-- Cores dos níveis como CSS vars em `styles.css`: `--lvl-1` … `--lvl-5`.
-- Tipos: `IntensityRank = 1|2|3|4|5`, `CategoryKey` expandido.
-- Engine retorna `DrawResult = { kind: 'normal'|'joker'|'twist'|'tension', challenge, ativo, passivo, levelOfCard }`.
-- Cron interno via contadores no store (não usar timers globais).
-- `framer-motion` já instalado — usar `AnimatePresence` com `mode="wait"`.
+- `src/lib/engine.ts`: reescrever `catHasActionAt`/`pickFromCat` para nunca exceder o nível atual; `drawTwist` recebe os papéis da carta anterior; `decideKind` com jitter e trava anti-sequência.
+- `src/routes/play.tsx`: `recordComplete` para `tension`/`joker`; limpar buffer de prefetch quando o nível sobe (a carta pré-carregada pode ser de um nível antigo); `loadingNext` nunca é ligado — remover ou usar.
+- `src/lib/store.ts`: `HISTORY_LIMIT` 10 → 20; registrar baseText das especiais.
+- `src/data/challenges.ts`: revisar textos com concordância fixa no masculino e com voz em primeira pessoa.
 
-## Escopo desta sessão
+## Ordem sugerida
 
-Implementarei tudo de uma vez (volume grande, mas coerente). Se algo ficar limítrofe, sinalizo. Conteúdo dos desafios: vou escrever um banco enxuto mas funcional (10–15 ações por nível, por categoria) usando as variáveis — você refina depois se quiser mais volume.
+1. Bugs 1, 2, 3 (afetam diretamente a progressão e o equilíbrio).
+2. Bugs 4, 5, 7 (qualidade de texto).
+3. Bugs 6, 8 + melhorias.
 
-Posso seguir?
+Posso implementar tudo de uma vez ou só o bloco 1 — me diz.
