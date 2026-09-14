@@ -15,8 +15,14 @@ function deleDela(g: Genero) {
   return g === "F" ? "dela" : "dele";
 }
 
+function vogal(g: Genero) {
+  return g === "F" ? "a" : "o";
+}
+
 export function interpolate(text: string, ctx: InterpContext): string {
   return text
+    .replaceAll("{o_a_ativo}", vogal(ctx.ativo.genero))
+    .replaceAll("{o_a}", vogal(ctx.passivo.genero))
     .replaceAll("{ativo}", ctx.ativo.nome)
     .replaceAll("{passivo}", ctx.passivo.nome)
     .replaceAll("{pronome_cap}", pronome(ctx.passivo.genero, true))

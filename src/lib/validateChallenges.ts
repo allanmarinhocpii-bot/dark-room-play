@@ -31,6 +31,8 @@ const KNOWN_VARS = new Set([
   "pronome_cap",
   "dele_dela",
   "dele_dela_ativo",
+  "o_a",
+  "o_a_ativo",
   "local",
 ]);
 const VAR_RE = /\{([a-z_]+)\}/gi;
