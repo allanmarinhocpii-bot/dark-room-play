@@ -111,8 +111,10 @@ function buildPropHint(
   return undefined;
 }
 
+/** Só é utilizável se tiver ação dentro do teto do nível atual — nunca acima. */
 function catHasActionAt(cat: CategoryKey, level: IntensityRank): boolean {
   const data = CATEGORIAS[cat];
+  if (data.rankBase > level) return false;
   const ranks: IntensityRank[] = [1, 2, 3, 4, 5];
   for (const r of ranks) {
     if (r > level) continue;
@@ -120,15 +122,11 @@ function catHasActionAt(cat: CategoryKey, level: IntensityRank): boolean {
     const list = data.acoes[r];
     if (list && list.length > 0) return true;
   }
-  for (const r of ranks) {
-    const list = data.acoes[r];
-    if (list && list.length > 0) return true;
-  }
   return false;
 }
 
-function drawNormal(input: DrawInput): DrawResult | null {
-  const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input);
+function drawNormal(input: DrawInput, swap = false): DrawResult | null {
+  const { ativo, passivo, ativoIs, passivoIs } = resolveRoles(input, swap);
   const usable = input.activeCategories.filter((c) => catHasActionAt(c, input.level));
   if (usable.length === 0) return null;
 
