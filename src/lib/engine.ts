@@ -3,7 +3,7 @@ import {
   CATEGORIAS,
   PROPS,
   TENSAO_PSICOLOGICA,
-  VIRADA,
+  
   type CategoryKey,
   type IntensityRank,
   type PropId,
