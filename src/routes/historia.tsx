@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSessionStore } from "@/lib/store";
-import { CATEGORIAS, LEVELS, type CategoryKey } from "@/data/challenges";
+import { CATEGORIAS, INTENSITY_LABEL, LEVELS, type CategoryKey } from "@/data/challenges";
 
 export const Route = createFileRoute("/historia")({
   head: () => ({
