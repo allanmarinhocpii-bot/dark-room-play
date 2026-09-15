@@ -13,8 +13,8 @@ import {
 } from "@/data/challenges";
 import { ChallengeCard, type CardAnimation } from "@/components/ChallengeCard";
 import { JokerCard } from "@/components/JokerCard";
-import { TwistCard } from "@/components/TwistCard";
 import { TensionCard } from "@/components/TensionCard";
+import { FinalCard } from "@/components/FinalCard";
 import { SafeWordButton } from "@/components/SafeWordButton";
 import { LevelUpOverlay } from "@/components/LevelUpOverlay";
 import { ProgressionBar } from "@/components/ProgressionBar";
@@ -48,6 +48,7 @@ function PlayPage() {
     categories,
     props,
     mode,
+    scoringMode,
     ritual,
     level,
     score,
@@ -87,12 +88,16 @@ function PlayPage() {
   const [showRitual, setShowRitual] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [loadingNext, setLoadingNext] = useState(false);
+  const [showFinal, setShowFinal] = useState(false);
+  const [finalRecusada, setFinalRecusada] = useState(false);
 
   const lastTextsRef = useRef<string[]>([]);
   const nextCardBufferRef = useRef<DrawResult | null>(null);
   const prefetchingRef = useRef(false);
   const currentTokenRef = useRef(0);
   const enhancedRef = useRef(new WeakSet<object>());
+  const lastKindRef = useRef<DrawResult["kind"] | undefined>(undefined);
+  const lastAtivoRef = useRef<"j1" | "j2" | undefined>(undefined);
 
   // Sorteia localmente — instantâneo, sem esperar IA
   const drawNextSync = (): DrawResult | null => {
@@ -109,15 +114,19 @@ function PlayPage() {
         roundsCompleted: state.stats.roundsCompleted,
         cardsDrawn: state.stats.cardsDrawn,
         recentTexts: state.stats.drawnHistory,
+        lastKind: lastKindRef.current,
+        lastAtivoIs: lastAtivoRef.current,
       });
       if (!c) return null;
       c.text = sanitizeCardText(c.text ?? "");
       // Descarta cartas sem texto legível e tenta de novo
-      if (c.kind !== "twist" && !hasReadableText(c.text)) {
+      if (!hasReadableText(c.text)) {
         recordDraw(null, null, c.baseText);
         continue;
       }
       recordDraw(c.categories[0] ?? null, c.kind === "normal" ? c.level : null, c.baseText);
+      lastKindRef.current = c.kind;
+      lastAtivoRef.current = c.ativoIs;
       return c;
     }
     return null;
@@ -156,11 +165,14 @@ function PlayPage() {
     }
   };
 
+  const bufferedLevelRef = useRef<IntensityRank | null>(null);
+
   const prefetchNext = () => {
     if (prefetchingRef.current || nextCardBufferRef.current) return;
     prefetchingRef.current = true;
     const next = drawNextSync();
     nextCardBufferRef.current = next;
+    bufferedLevelRef.current = useSessionStore.getState().level;
     if (next) {
       void enhance(next, -1).finally(() => {
         prefetchingRef.current = false;
@@ -185,6 +197,14 @@ function PlayPage() {
   };
 
   const loadNext = (anim: CardAnimation = "card-flip-in") => {
+    // Descarta a carta pré-carregada se o nível mudou desde o prefetch
+    if (
+      nextCardBufferRef.current &&
+      bufferedLevelRef.current !== useSessionStore.getState().level
+    ) {
+      nextCardBufferRef.current = null;
+      bufferedLevelRef.current = null;
+    }
     if (nextCardBufferRef.current) {
       const buffered = nextCardBufferRef.current;
       nextCardBufferRef.current = null;
@@ -225,17 +245,17 @@ function PlayPage() {
   const handleComplete = async () => {
     if (!card) return;
     let pts = 10;
-    if (card.kind === "twist") pts = 20;
-    else if (card.kind === "tension") pts = 8;
+    if (card.kind === "tension") pts = 8;
+    else if (card.kind === "joker") pts = 10;
     else {
       if (card.durationSeconds) pts = 15;
       if (card.categories.length > 1) pts += 5;
+      if (card.twisted) pts += 10;
     }
-    if (card.kind === "twist") recordTwist();
+    if (card.twisted) recordTwist();
     awardToPlayer(card.kind === "joker" ? card.ativoIs : card.passivoIs, pts);
-    if (card.kind !== "joker" && card.kind !== "tension") {
-      recordComplete(card.passivoIs, card.level);
-    }
+    // toda carta concluída conta rodada — inclusive pausa e coringa
+    recordComplete(card.passivoIs, card.level);
     setBurst(pts);
     setTimeout(() => setBurst(null), 1200);
 
@@ -254,6 +274,13 @@ function PlayPage() {
     setLevelUpTo(null);
     void loadNext();
   };
+
+  // Depois de algumas rodadas no Ápice, oferece a carta final
+  useEffect(() => {
+    if (finalRecusada || showFinal || levelUpTo || showRitual) return;
+    if (level !== 5 || stats.apexStartRound === null) return;
+    if (stats.roundsCompleted - stats.apexStartRound >= 6) setShowFinal(true);
+  }, [level, stats.roundsCompleted, stats.apexStartRound, finalRecusada, showFinal, levelUpTo, showRitual]);
 
   const finishSession = () => {
     endSession("normal");
@@ -306,15 +333,23 @@ function PlayPage() {
           </p>
         </div>
         <div className="mt-4 flex items-center justify-between font-display text-[10px] uppercase tracking-[0.2em]">
-          <span className="text-muted-foreground">
-            {jogador1.nome}{" "}
-            <span className="text-foreground">{String(pontos.j1).padStart(2, "0")}</span>
-          </span>
-          <span className="text-muted-foreground/40">·</span>
-          <span className="text-muted-foreground">
-            {jogador2.nome}{" "}
-            <span className="text-foreground">{String(pontos.j2).padStart(2, "0")}</span>
-          </span>
+          {scoringMode === "competitivo" ? (
+            <>
+              <span className="text-muted-foreground">
+                {jogador1.nome}{" "}
+                <span className="text-foreground">{String(pontos.j1).padStart(2, "0")}</span>
+              </span>
+              <span className="text-muted-foreground/40">·</span>
+              <span className="text-muted-foreground">
+                {jogador2.nome}{" "}
+                <span className="text-foreground">{String(pontos.j2).padStart(2, "0")}</span>
+              </span>
+            </>
+          ) : (
+            <span className="mx-auto text-muted-foreground">
+              Dupla <span className="text-foreground">{String(score).padStart(3, "0")}</span>
+            </span>
+          )}
         </div>
         <div className="relative mt-5">
           <ProgressionBar level={level} score={score} />
@@ -343,7 +378,18 @@ function PlayPage() {
           </div>
         )}
 
-        {card?.kind === "joker" && (
+        {showFinal && (
+          <FinalCard
+            animation={cardAnim}
+            onEncerrar={finishSession}
+            onContinuar={() => {
+              setShowFinal(false);
+              setFinalRecusada(true);
+            }}
+          />
+        )}
+
+        {!showFinal && card?.kind === "joker" && (
           <JokerCard
             key={cardId}
             animation={cardAnim}
@@ -352,16 +398,7 @@ function PlayPage() {
             onComplete={handleComplete}
           />
         )}
-        {card?.kind === "twist" && (
-          <TwistCard
-            key={cardId}
-            animation={cardAnim}
-            text={card.text}
-            ativoNome={card.ativo.nome}
-            passivoNome={card.passivo.nome}
-          />
-        )}
-        {card?.kind === "tension" && (
+        {!showFinal && card?.kind === "tension" && (
           <TensionCard
             key={cardId}
             animation={cardAnim}
@@ -370,7 +407,7 @@ function PlayPage() {
             passivoNome={card.passivo.nome}
           />
         )}
-        {card?.kind === "normal" && (
+        {!showFinal && card?.kind === "normal" && (
           <ChallengeCard
             key={cardId}
             animation={cardAnim}
@@ -381,10 +418,11 @@ function PlayPage() {
             ativoNome={card.ativo.nome}
             passivoNome={card.passivo.nome}
             propHint={card.propHint}
+            twisted={card.twisted}
           />
         )}
 
-        {!card && !loadingNext && initialized && !showRitual && !levelUpTo && (
+        {!card && !loadingNext && !showFinal && initialized && !showRitual && !levelUpTo && (
           <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center">
             <p className="font-display text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
               Sem cartas disponíveis
@@ -403,7 +441,7 @@ function PlayPage() {
         )}
 
 
-        {card && !loadingNext && card.kind !== "joker" && (
+        {card && !loadingNext && !showFinal && card.kind !== "joker" && (
           <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-3">
             <button
               onClick={handleSkip}
@@ -418,6 +456,15 @@ function PlayPage() {
               Concluído
             </button>
           </div>
+        )}
+
+        {card && !loadingNext && !showFinal && (
+          <button
+            onClick={() => void trocarCarta("pulou")}
+            className="mt-4 font-display text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60 hover:text-foreground"
+          >
+            Outra carta
+          </button>
         )}
       </main>
 
