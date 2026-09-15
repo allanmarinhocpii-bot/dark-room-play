@@ -43,6 +43,14 @@ function HistoriaPage() {
           : jogador2
       : null;
 
+  const duracaoMs =
+    stats.startedAt && stats.endedAt ? stats.endedAt - stats.startedAt : null;
+  const mediaMin =
+    duracaoMs && stats.roundsCompleted > 0
+      ? Math.max(1, Math.round(duracaoMs / stats.roundsCompleted / 60000))
+      : null;
+  const duracaoMin = duracaoMs ? Math.max(1, Math.round(duracaoMs / 60000)) : null;
+
   const dataFmt = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
@@ -86,6 +94,9 @@ function HistoriaPage() {
               ["Concluídas", stats.roundsCompleted],
               ["Puladas", stats.skips],
               ["Viradas", stats.twists],
+              ["Tempo", duracaoMin ? `${duracaoMin} min` : "—"],
+              ["Por rodada", mediaMin ? `${mediaMin} min` : "—"],
+              ["Mais intensa", INTENSITY_LABEL[stats.maxLevelCompleted ?? 1]],
             ] as const
           ).map(([label, val]) => (
             <div key={label} className="rounded-md border border-border p-4">
