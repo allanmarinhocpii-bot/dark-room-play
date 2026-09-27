@@ -182,16 +182,26 @@ function PlayPage() {
     }
   };
 
+  const isDisplayable = (c: DrawResult | null): c is DrawResult => {
+    if (!c) return false;
+    if (c.kind === "joker") return true;
+    if (!hasReadableText(c.text)) return false;
+    if (c.kind === "normal" && c.categories.length === 0) return false;
+    if (!c.ativo?.nome || !c.passivo?.nome) return false;
+    return true;
+  };
+
   const advanceTo = (c: DrawResult | null, anim: CardAnimation = "card-flip-in") => {
     const token = currentTokenRef.current + 1;
     currentTokenRef.current = token;
-    setCard(c);
+    const valida = isDisplayable(c) ? c : null;
+    setCard(valida);
     setCardId((i) => i + 1);
     setCardAnim(anim);
     setLoadingNext(false);
-    if (c) {
+    if (valida) {
       // se veio direto do sorteio (sem IA ainda), melhora em background
-      void enhance(c, token);
+      void enhance(valida, token);
       prefetchNext();
     }
   };
@@ -208,11 +218,17 @@ function PlayPage() {
     if (nextCardBufferRef.current) {
       const buffered = nextCardBufferRef.current;
       nextCardBufferRef.current = null;
-      advanceTo(buffered, anim);
-      return;
+      if (isDisplayable(buffered)) {
+        advanceTo(buffered, anim);
+        return;
+      }
     }
-    advanceTo(drawNextSync(), anim);
+    let fresh = drawNextSync();
+    let tentativas = 0;
+    while (!isDisplayable(fresh) && tentativas++ < 4) fresh = drawNextSync();
+    advanceTo(isDisplayable(fresh) ? fresh : null, anim);
   };
+
 
   const trocarCarta = async (motivo: "concluido" | "pulou") => {
     setCardAnim(motivo === "concluido" ? "card-exit-up" : "card-exit-left");
