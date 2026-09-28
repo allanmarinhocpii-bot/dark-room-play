@@ -98,6 +98,9 @@ function PlayPage() {
   const enhancedRef = useRef(new WeakSet<object>());
   const lastKindRef = useRef<DrawResult["kind"] | undefined>(undefined);
   const lastAtivoRef = useRef<"j1" | "j2" | undefined>(undefined);
+  const currentCardRef = useRef<DrawResult | null>(null);
+  const busyRef = useRef(false);
+  const preBufferRefs = useRef<{ kind?: DrawResult["kind"]; ativo?: "j1" | "j2" }>({});
 
   // Sorteia localmente — instantâneo, sem esperar IA
   const drawNextSync = (): DrawResult | null => {
@@ -160,7 +163,7 @@ function PlayPage() {
     if (result.segundos && result.segundos > 0) c.durationSeconds = result.segundos;
     if (result.prop_usado) c.propHint = undefined;
     // só atualiza a UI se essa carta ainda for a atual
-    if (currentTokenRef.current === token) {
+    if (currentTokenRef.current === token || currentCardRef.current === c) {
       setCard({ ...c });
     }
   };
@@ -170,6 +173,7 @@ function PlayPage() {
   const prefetchNext = () => {
     if (prefetchingRef.current || nextCardBufferRef.current) return;
     prefetchingRef.current = true;
+    preBufferRefs.current = { kind: lastKindRef.current, ativo: lastAtivoRef.current };
     const next = drawNextSync();
     nextCardBufferRef.current = next;
     bufferedLevelRef.current = useSessionStore.getState().level;
@@ -195,6 +199,7 @@ function PlayPage() {
     const token = currentTokenRef.current + 1;
     currentTokenRef.current = token;
     const valida = isDisplayable(c) ? c : null;
+    currentCardRef.current = valida;
     setCard(valida);
     setCardId((i) => i + 1);
     setCardAnim(anim);
@@ -214,6 +219,9 @@ function PlayPage() {
     ) {
       nextCardBufferRef.current = null;
       bufferedLevelRef.current = null;
+      // a carta descartada não pode servir de referência p/ virada/cadência
+      lastKindRef.current = preBufferRefs.current.kind;
+      lastAtivoRef.current = preBufferRefs.current.ativo;
     }
     if (nextCardBufferRef.current) {
       const buffered = nextCardBufferRef.current;
@@ -231,8 +239,11 @@ function PlayPage() {
 
 
   const trocarCarta = async (motivo: "concluido" | "pulou") => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setCardAnim(motivo === "concluido" ? "card-exit-up" : "card-exit-left");
     await new Promise((r) => setTimeout(r, 250));
+    busyRef.current = false;
     loadNext("card-flip-in");
   };
 
@@ -254,12 +265,13 @@ function PlayPage() {
   }, [hasHydrated]);
 
   const handleSkip = () => {
+    if (busyRef.current) return;
     recordSkip();
     void trocarCarta("pulou");
   };
 
   const handleComplete = async () => {
-    if (!card) return;
+    if (!card || busyRef.current) return;
     let pts = 10;
     if (card.kind === "tension") pts = 8;
     else if (card.kind === "joker") pts = 10;
@@ -277,8 +289,11 @@ function PlayPage() {
 
     const { leveledUp, newLevel } = awardPoints(pts);
     if (leveledUp) {
+      busyRef.current = true;
       setCardAnim("card-exit-up");
       await new Promise((r) => setTimeout(r, 250));
+      busyRef.current = false;
+      currentCardRef.current = null;
       setCard(null);
       setLevelUpTo(newLevel);
     } else {
